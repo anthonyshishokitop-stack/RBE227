@@ -1,0 +1,1 @@
+// Save this as script.js and replace <script> section with <script src="script.js"></script>
