@@ -12,6 +12,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
   <style>
     :root{
@@ -451,22 +453,21 @@
 
 <script>
   // GLOBAL DATA
-  let eq = [], up = [], mt = [], delaysData = [], calendar = null, charts = {};
-  let syncStatus = 'live', lastSyncTime = 0;
+  let eq = [], up = [], mt = [], calendar = null, charts = {};
+  let lastSyncTime = 0;
 
-  // COMPLETE IMPALA SHAFTS LIST
-  const IMPALA_SHAFTS = [
-    "1 Shaft", "2 Shaft", "3 Shaft", "4 Shaft", "5 Shaft", "6 Shaft", 
-    "7 Shaft", "8 Shaft", "9 Shaft", "10 Shaft", "11 Shaft", "12 Shaft", 
-    "14 Shaft", "16 Shaft", "CLAPHAM", "K3", "North Decline", "South Decline",
-    "Apmotse", "BPM", "NPC", "Leeuwkop", "Zandfontein", "Rustenburg"
-  ];
-
-  // STORAGE HELPERS
-  const storage = {
-    get(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } },
-    set(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+  // Firebase initialization
+  const firebaseConfig = {
+    apiKey: "AIzaSyDlbzmgZykYM9uHoGFW8jFKZxxs1mAaMJM",
+    authDomain: "rbemine-972a8.firebaseapp.com",
+    projectId: "rbemine-972a8",
+    storageBucket: "rbemine-972a8.firebasestorage.app",
+    messagingSenderId: "188009589982",
+    appId: "1:188009589982:web:61114e6ea73fd22ccc664f",
+    measurementId: "G-17TT2XN7T3"
   };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
 
   // LIVE INDICATOR
   function updateLiveIndicator() {
@@ -479,9 +480,9 @@
     text.textContent = `LIVE • ${timeSince}s`;
   }
 
-  // LOAD FALLBACK DATA
-  function loadFallbackData() {
-    eq = [
+  // LOAD FALLBACK DATA TO FIRESTORE
+  async function loadFallbackToFirestore() {
+    const fallbackEq = [
       {Shaft:"1 Shaft",Level:"14 Level","Loco Size":"10t Loco","Loco Number":"364",SECTION:"1245"},
       {Shaft:"CLAPHAM",Level:"15 Level","Loco Size":"8t Loco","Loco Number":"217",SECTION:"5678"},
       {Shaft:"North Decline",Level:"20 Level","Loco Size":"12t Loco","Loco Number":"412",SECTION:"8901"},
@@ -491,16 +492,16 @@
       {Shaft:"1 Shaft",Level:"19 Level","Loco Size":"10t Loco","Loco Number":"15",SECTION:"5567"},
       {Shaft:"1 Shaft",Level:"20 Level","Loco Size":"10t Loco","Loco Number":"270",SECTION:"6678"}
     ];
-    
-    up = [
+
+    const fallbackUp = [
       {Date:"2025-11-28",Time:"07:30","Equipment ID":"364",Status:"Fixed",Shift:"Morning","Reason/Fault":"Brake pads replaced","Downtime Hours":3.5,"Is Failure?":1},
       {Date:"2025-11-27",Time:"14:20","Equipment ID":"217",Status:"Down",Shift:"Afternoon","Reason/Fault":"Hydraulic leak","Downtime Hours":8,"Is Failure?":1},
       {Date:"2025-11-28",Time:"09:00","Equipment ID":"15",Status:"Down",Shift:"Morning","Reason/Fault":"BRAKES","Downtime Hours":384,"Is Failure?":1},
       {Date:"2025-11-28",Time:"10:00","Equipment ID":"270",Status:"Down",Shift:"Morning","Reason/Fault":"Not Starting","Downtime Hours":0,"Is Failure?":1},
       {Date:"2025-11-28",Time:"11:00","Equipment ID":"155",Status:"Down",Shift:"Morning","Reason/Fault":"BRAKES FAILURE","Downtime Hours":0,"Is Failure?":1}
     ];
-    
-    mt = [
+
+    const fallbackMt = [
       {equipment:"364",task:"Oil Change",interval:"monthly",lastDone:"2025-10-28"},
       {equipment:"444",task:"Brake Inspection",interval:"weekly",lastDone:"2025-11-21"},
       {equipment:"217",task:"Service",interval:"weekly",lastDone:"2025-11-21"},
@@ -508,10 +509,34 @@
       {equipment:"158",task:"CHANGE OIL",interval:"weekly",lastDone:"2025-11-21"}
     ];
 
-    // Save to localStorage
-    storage.set('equipment', eq);
-    storage.set('updates', up);
-    storage.set('maintenance', mt);
+    for (const e of fallbackEq) {
+      await firebase.firestore().collection('equipment').doc(e['Loco Number']).set(e);
+    }
+
+    for (const u of fallbackUp) {
+      await firebase.firestore().collection('updates').add(u);
+    }
+
+    for (const m of fallbackMt) {
+      await firebase.firestore().collection('maintenance').add(m);
+    }
+  }
+
+  // LOAD DATA FROM FIRESTORE
+  async function loadData() {
+    const equipSnap = await db.collection('equipment').get();
+    eq = equipSnap.docs.map(doc => ({'Loco Number': doc.id, ...doc.data()}));
+
+    const updateSnap = await db.collection('updates').get();
+    up = updateSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+
+    const maintSnap = await db.collection('maintenance').get();
+    mt = maintSnap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+
+    if (eq.length === 0) {
+      await loadFallbackToFirestore();
+      await loadData(); // Reload after adding fallback
+    }
   }
 
   // UTILITY FUNCTIONS
@@ -669,7 +694,7 @@
 
     // Upcoming Maintenance
     const upcoming = mt
-      .map((m, i) => ({...m, index: i, days: calculateDaysLeft(m.lastDone, m.interval)}))
+      .map(m => ({...m, days: calculateDaysLeft(m.lastDone, m.interval)}))
       .filter(m => !isNaN(m.days) && m.days <= 14 && m.days >= 0)
       .sort((a,b) => a.days - b.days);
     
@@ -742,7 +767,7 @@
 
   function populateMaintTable() {
     const tbody = document.getElementById('maint-tbody');
-    tbody.innerHTML = mt.map((m, i) => {
+    tbody.innerHTML = mt.map((m) => {
       const days = calculateDaysLeft(m.lastDone, m.interval);
       const display = isNaN(days) ? '-' : (days >= 0 ? `${days} days` : `${Math.abs(days)} overdue`);
       const colorClass = days > 3 ? '' : (days > 0 ? 'warn' : 'danger');
@@ -756,9 +781,9 @@
           <td>${calculateNextDue(m.lastDone, m.interval)}</td>
           <td class="${colorClass}">${display}</td>
           <td class="maint-actions">
-            <button class="done-btn" onclick="markDone(${i})">✅</button>
-            <button class="edit-btn" onclick="openEditModal(${i})">✏️</button>
-            <button class="delete-btn" onclick="deleteMaint(${i})">🗑️</button>
+            <button class="done-btn" onclick="markDone('${m.id}')">✅</button>
+            <button class="edit-btn" onclick="openEditModal('${m.id}')">✏️</button>
+            <button class="delete-btn" onclick="deleteMaint('${m.id}')">🗑️</button>
           </td>
         </tr>
       `;
@@ -801,9 +826,10 @@
     document.getElementById('add-maint-modal').classList.remove('active');
   }
 
-  function openEditModal(index) {
-    const m = mt[index];
-    document.getElementById('edit-index').value = index;
+  function openEditModal(id) {
+    const m = mt.find(item => item.id === id);
+    if (!m) return;
+    document.getElementById('edit-index').value = id;
     document.getElementById('edit-equipment').value = m.equipment;
     document.getElementById('edit-task').value = m.task;
     document.getElementById('edit-interval').value = m.interval;
@@ -815,19 +841,13 @@
     document.getElementById('edit-modal').classList.remove('active');
   }
 
-  function markDone(index) {
-    mt[index].lastDone = new Date().toISOString().slice(0,10);
-    storage.set('maintenance', mt);
-    populateMaintTable();
-    populateDashboard();
+  async function markDone(id) {
+    await db.collection('maintenance').doc(id).update({lastDone: new Date().toISOString().slice(0,10)});
   }
 
-  function deleteMaint(index) {
+  async function deleteMaint(id) {
     if (confirm('Delete this maintenance task?')) {
-      mt.splice(index, 1);
-      storage.set('maintenance', mt);
-      populateMaintTable();
-      populateDashboard();
+      await db.collection('maintenance').doc(id).delete();
     }
   }
 
@@ -886,17 +906,35 @@
   }
 
   // EVENT LISTENERS
-  document.addEventListener('DOMContentLoaded', () => {
-    // Load data
-    eq = storage.get('equipment');
-    up = storage.get('updates');
-    mt = storage.get('maintenance');
+  document.addEventListener('DOMContentLoaded', (async () => {
+    await loadData();
 
-    if (!eq.length) loadFallbackData();
+    // Set real-time listeners
+    onSnapshot(db.collection('equipment'), (snap) => {
+      eq = snap.docs.map(doc => ({'Loco Number': doc.id, ...doc.data()}));
+      fillDatalist();
+      if (document.querySelector('#sidebar-menu li.active').dataset.section === 'dashboard') populateDashboard();
+      if (document.querySelector('#sidebar-menu li.active').dataset.section === 'manage-equipment') populateEquipmentTable();
+      if (document.querySelector('#sidebar-menu li.active').dataset.section === 'summary') populateSummaryTable();
+    });
+
+    onSnapshot(db.collection('updates'), (snap) => {
+      up = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+      if (document.querySelector('#sidebar-menu li.active').dataset.section === 'dashboard') populateDashboard();
+      if (document.querySelector('#sidebar-menu li.active').dataset.section === 'status-log') populateLogTable();
+      if (document.querySelector('#sidebar-menu li.active').dataset.section === 'summary') populateSummaryTable();
+    });
+
+    onSnapshot(db.collection('maintenance'), (snap) => {
+      mt = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
+      if (document.querySelector('#sidebar-menu li.active').dataset.section === 'dashboard') populateDashboard();
+      if (document.querySelector('#sidebar-menu li.active').dataset.section === 'maintenance-schedule') populateMaintTable();
+      if (document.querySelector('#sidebar-menu li.active').dataset.section === 'calendar') initCalendar();
+    });
 
     // Fill forms
     const today = new Date().toISOString().slice(0,10);
-    const now = new Date().toISOString().slice(0, 5);
+    const now = new Date().toISOString().slice(11,16);
     document.getElementById('u-date').value = today;
     document.getElementById('u-time').value = now;
     document.getElementById('s-date').value = today;
@@ -921,46 +959,39 @@
     lastSyncTime = Date.now();
     setInterval(updateLiveIndicator, 1000);
 
-    // ADD EQUIPMENT FORM - FIXED ✅
-    document.getElementById('add-eq-form').addEventListener('submit', e => {
+    // ADD EQUIPMENT FORM
+    document.getElementById('add-eq-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       
       const newEquipment = {
         Shaft: document.getElementById('new-shaft').value,
         Level: document.getElementById('new-level').value,
         'Loco Size': document.getElementById('new-size').value,
-        'Loco Number': document.getElementById('new-number').value.trim(),
         SECTION: document.getElementById('new-section').value
       };
+      const locoNumber = document.getElementById('new-number').value.trim();
 
-      // Check for duplicate loco number
-      const duplicate = eq.find(eq => eq['Loco Number'] === newEquipment['Loco Number']);
-      if (duplicate) {
-        alert(`⚠️ Loco ${newEquipment['Loco Number']} already exists!`);
+      if (!locoNumber) {
+        alert('⚠️ Loco Number is required!');
         return;
       }
 
-      // Add to equipment list
-      eq.push(newEquipment);
-      storage.set('equipment', eq);
-      
-      // Update everything
-      fillDatalist();
-      populateDashboard();
-      populateEquipmentTable();
-      populateSummaryTable();
-      
-      // Reset form and show success
+      const equipRef = db.collection('equipment').doc(locoNumber);
+      const snap = await equipRef.get();
+      if (snap.exists()) {
+        alert(`⚠️ Loco ${locoNumber} already exists!`);
+        return;
+      }
+
+      await equipRef.set(newEquipment);
       e.target.reset();
       showSuccess('✅ Equipment added successfully! Dashboard updated.');
-      
-      console.log('✅ New Equipment Added:', newEquipment);
     });
 
     // STATUS UPDATE FORM
-    document.getElementById('add-status-form').addEventListener('submit', e => {
+    document.getElementById('add-status-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      up.push({
+      const newUpdate = {
         Date: document.getElementById('u-date').value,
         Time: document.getElementById('u-time').value,
         'Equipment ID': document.getElementById('u-loco').value,
@@ -969,11 +1000,8 @@
         'Reason/Fault': document.getElementById('u-reason').value,
         'Downtime Hours': parseFloat(document.getElementById('u-downtime').value) || 0,
         'Is Failure?': parseInt(document.getElementById('u-failure').value)
-      });
-      storage.set('updates', up);
-      populateDashboard();
-      populateLogTable();
-      populateSummaryTable();
+      };
+      await db.collection('updates').add(newUpdate);
       e.target.reset();
       document.getElementById('u-date').value = today;
       document.getElementById('u-time').value = now;
@@ -981,40 +1009,36 @@
     });
 
     // MAINTENANCE FORMS
-    document.getElementById('add-maint-form').addEventListener('submit', e => {
+    document.getElementById('add-maint-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      mt.push({
+      const newMaint = {
         equipment: document.getElementById('add-equipment').value,
         task: document.getElementById('add-task').value,
         interval: document.getElementById('add-interval').value,
         lastDone: document.getElementById('add-last').value
-      });
-      storage.set('maintenance', mt);
+      };
+      await db.collection('maintenance').add(newMaint);
       closeAddMaintModal();
-      populateMaintTable();
-      populateDashboard();
       e.target.reset();
       alert('✅ Maintenance task added!');
     });
 
-    document.getElementById('edit-maint-form').addEventListener('submit', e => {
+    document.getElementById('edit-maint-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const index = parseInt(document.getElementById('edit-index').value);
-      mt[index] = {
+      const id = document.getElementById('edit-index').value;
+      const updated = {
         equipment: document.getElementById('edit-equipment').value,
         task: document.getElementById('edit-task').value,
         interval: document.getElementById('edit-interval').value,
         lastDone: document.getElementById('edit-last').value
       };
-      storage.set('maintenance', mt);
+      await db.collection('maintenance').doc(id).update(updated);
       closeEditModal();
-      populateMaintTable();
-      populateDashboard();
       alert('✅ Task updated!');
     });
 
     // SEARCH FORM
-    document.getElementById('search-form').addEventListener('submit', e => {
+    document.getElementById('search-form').addEventListener('submit', (e) => {
       e.preventDefault();
       const loco = document.getElementById('s-loco').value;
       const date = document.getElementById('s-date').value;
@@ -1074,7 +1098,7 @@
 
     // Theme toggle
     document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
-  });
+  })());
 
   function toggleTheme() {
     const current = document.body.getAttribute('data-theme');
@@ -1139,7 +1163,6 @@
     a.click();
   }
 
-  // Other export functions remain the same...
   async function exportMaintPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
