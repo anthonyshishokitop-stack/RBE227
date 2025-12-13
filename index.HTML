@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Impala RBE Monitor - Platinum Operations</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css' rel='stylesheet' />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+
+  <style>
+    :root{
+      --bg:#0a0e17; --card:#1a2332; --txt:#e2e8f0; --border:#334155; --hdr:#1e293b;
+      --prim:#0d47a1; --prim-light:#1976d2; --succ:#2ecc71; --warn:#f39c12;
+      --danger:#e74c3c; --maint:#3498db; --high:#e74c3c; --pred:#e67e22;
+      --shadow:0 8px 32px rgba(0,0,0,0.5); --radius:16px; --gap:28px; --pad:32px;
+      --accent-gold:#f4c542; --teal:#008080;
+    }
+    [data-theme="light"]{
+      --bg:#f8fafc; --card:#ffffff; --txt:#1e293b; --border:#cbd5e1; --hdr:#f1f5f9;
+      --prim:#0d47a1; --prim-light:#1976d2; --succ:#2ecc71; --warn:#f39c12;
+      --danger:#e74c3c; --maint:#3498db; --high:#e74c3c; --pred:#e67e22;
+      --shadow:0 8px 32px rgba(0,0,0,0.1);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{height:100%;font-family:'Roboto',sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;}
+    body{
+      background-image:url('https://images.unsplash.com/photo-1565538810648-7f5a2c106b8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80');
+      background-size:cover;background-position:center;background-attachment:fixed;
+      display:flex;flex-direction:column;
+    }
+    h1,h2,h3,h4{margin:0 0 .5em;color:var(--prim);font-weight:700;}
+    h1{font-size:clamp(1.9rem,4vw,2.5rem);} h2{font-size:1.6rem;}
+    .wrapper{display:flex;flex:1;}
+    .sidebar{position:sticky;top:0;height:100vh;width:280px;background:var(--prim);color:#fff;padding:var(--pad);box-shadow:8px 0 40px rgba(0,0,0,.25);overflow-y:auto;z-index:10;display:flex;flex-direction:column;}
+    .sidebar .logo-container{text-align:center;margin-bottom:3rem;flex-shrink:0;position:relative;}
+    .sidebar .logo-img{max-width:160px;display:block;margin:0 auto;border-radius:16px;box-shadow:0 6px 20px rgba(0,0,0,.5);}
+    .theme-toggle{position:absolute;top:8px;right:8px;background:none;border:none;font-size:1.1rem;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all .3s;backdrop-filter:blur(8px);color:var(--txt);}
+    .theme-toggle:hover{transform:scale(1.15);background:rgba(255,255,255,.18);}
+    #sidebar-menu{list-style:none;flex:1;}
+    #sidebar-menu li{padding:16px 20px;margin:10px 0;border-radius:12px;cursor:pointer;transition:all .35s ease;font-weight:600;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden;}
+    #sidebar-menu li[data-icon]::before{content:attr(data-icon);font-size:1.6rem;}
+    #sidebar-menu li span{flex:1;font-size:1.02rem;}
+    #sidebar-menu li:hover{background:var(--prim-light);transform:translateX(4px);box-shadow:0 0 20px rgba(255,255,255,.2);}
+    #sidebar-menu li.active{background:var(--prim-light);box-shadow:0 0 25px rgba(255,255,255,.4);font-weight:700;transform:scale(1.03);}
+    .main{flex:1;padding:var(--gap);overflow-y:auto;}
+    .container{max-width:1700px;margin:0 auto;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:var(--pad);min-height:100%;position:relative;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);}
+    .header-bar{background:linear-gradient(135deg,var(--prim),var(--prim-light));color:#fff;padding:1.4rem 2rem;border-radius:var(--radius) var(--radius) 0 0;margin:-var(--pad) -var(--pad) var(--gap);display:flex;justify-content:space-between;align-items:center;box-shadow:0 6px 25px rgba(0,0,0,.4);}
+    .header-bar h1{font-size:1.9rem;text-shadow:0 2px 5px rgba(0,0,0,.5);}
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:var(--gap);margin:2.2rem 0;}
+    .kpi-card{padding:2rem;border-radius:var(--radius);text-align:center;color:#fff;box-shadow:var(--shadow);font-weight:800;display:flex;flex-direction:column;gap:.6rem;position:relative;overflow:hidden;}
+    .kpi-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:6px;background:linear-gradient(90deg,var(--accent-gold),transparent);}
+    .kpi-card h2{font-size:2.5rem;margin:0;text-shadow:0 2px 5px rgba(0,0,0,.4);}
+    .kpi-card p{font-size:1.05rem;opacity:.95;}
+    .kpi-card.green::before{background:var(--succ);}
+    .kpi-card.orange::before{background:var(--warn);}
+    .kpi-card.red::before{background:var(--danger);}
+    .chart-wrapper{background:var(--card);padding:2rem;border-radius:var(--radius);box-shadow:var(--shadow);margin:2.2rem 0;position:relative;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);}
+    .chart-title{font-weight:700;color:var(--prim);margin-bottom:1.2rem;font-size:1.3rem;display:flex;align-items:center;gap:10px;text-shadow:0 1px 3px rgba(0,0,0,.2);}
+    .alert-banner{padding:1.5rem 1.8rem;border-radius:var(--radius);margin:1.8rem 0;box-shadow:var(--shadow);border-left:8px solid;display:flex;align-items:center;gap:14px;font-weight:700;backdrop-filter:blur(8px);}
+    .alert-high-risk{background:rgba(231,76,60,.18);color:var(--high);border-color:var(--high);}
+    .alert-predictive{background:rgba(230,126,34,.18);color:var(--pred);border-color:var(--pred);}
+    .alert-list{list-style:none;margin:1.2rem 0 0;flex:1;}
+    .alert-item{background:rgba(255,255,255,.15);padding:1rem 1.4rem;margin:8px 0;border-radius:10px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 3px 8px rgba(0,0,0,.06);font-size:.98rem;border:1px solid rgba(255,255,255,.12);}
+    .risk-badge{padding:7px 18px;border-radius:30px;font-size:.8rem;font-weight:900;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.5);}
+    .risk-high{background:var(--high);}
+    .risk-predict{background:var(--pred);}
+    .form-group{margin:1.4rem 0;}
+    label{display:block;font-weight:700;margin-bottom:.6rem;font-size:1rem;color:var(--prim);}
+    input,select,textarea{width:100%;padding:16px 18px;border:1px solid var(--border);border-radius:12px;background:var(--card);color:var(--txt);font-size:1.05rem;transition:all .3s;backdrop-filter:blur(5px);}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--prim);box-shadow:0 0 0 5px rgba(13,71,161,.25);}
+    button{padding:16px 32px;border:none;border-radius:12px;cursor:pointer;font-weight:700;transition:all .4s;box-shadow:0 8px 22px rgba(0,0,0,.25);font-size:1.05rem;}
+    button:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.35);}
+    button.primary{background:linear-gradient(135deg,var(--prim),var(--prim-light));color:#fff;}
+    button.success{background:var(--succ);color:#fff;}
+    button.warn{background:var(--warn);color:#000;}
+    button.danger{background:var(--danger);color:#fff;}
+    button.maint{background:var(--maint);color:#fff;}
+    button.export{margin-left:12px;padding:12px 20px;font-size:.95rem;}
+    button.teal{background:var(--teal);color:#fff;}
+    table{width:100%;border-collapse:collapse;margin:1.8rem 0;font-size:.98rem;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);backdrop-filter:blur(8px);}
+    th,td{padding:18px 16px;border-bottom:1px solid var(--border);text-align:left;}
+    th{background:var(--teal);color:#fff;font-weight:700;position:sticky;top:0;z-index:5;}
+    tr:nth-child(even){background:rgba(255,255,255,.04);}
+    tr:hover{background:rgba(13,71,161,.1);}
+    .hidden{display:none!important;}
+    .live-indicator{position:fixed;bottom:1.8rem;right:1.8rem;background:var(--succ);color:#fff;padding:14px 28px;border-radius:50px;font-weight:900;box-shadow:var(--shadow);z-index:999;animation:pulse 2s infinite;display:flex;align-items:center;gap:12px;border:3px solid rgba(255,255,255,.35);}
+    .live-indicator::before{content:"Live";color:#fff;animation:blink 1.5s infinite;font-size:.9rem;font-weight:700;}
+    @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.07);}}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:.5;}}
+    .chart-container{position:relative;height:360px;}
+    #calendar-div{background:var(--card);padding:2rem;border-radius:var(--radius);box-shadow:var(--shadow);min-height:600px;border:1px solid rgba(255,255,255,.15);}
+    .maint-actions{display:flex;gap:8px;}
+    .maint-actions button{padding:6px 12px;font-size:.85rem;border-radius:8px;}
+    .maint-actions .done-btn{background:#2ecc71;color:#fff;}
+    .maint-actions .edit-btn{background:#3498db;color:#fff;}
+    .maint-actions .delete-btn{background:#e74c3c;color:#fff;}
+    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);align-items:center;justify-content:center;z-index:1000;}
+    .modal.active{display:flex;}
+    .modal-content{background:var(--card);padding:2rem;border-radius:var(--radius);width:90%;max-width:500px;box-shadow:var(--shadow);}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;}
+    .modal-header h3{margin:0;color:var(--prim);}
+    .close-modal{background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--txt);}
+    .job-order-preview{background:var(--card);padding:2rem;border-radius:var(--radius);box-shadow:var(--shadow);margin:1.8rem 0;}
+    .job-order-preview h2{color:var(--teal);margin-bottom:1rem;}
+    .job-line{border-bottom:1px solid var(--border);margin:12px 0;}
+    .job-table{margin:1.5rem 0;}
+    .job-table th{background:var(--teal);color:#fff;padding:10px;}
+    .job-table td{padding:10px;border:1px solid var(--border);}
+    .signature-line{display:flex;gap:2rem;margin-top:2rem;}
+    .signature-line div{flex:1;}
+    @media(max-width:1200px){.sidebar{width:100px;padding:1.8rem 0;}.sidebar .logo-container,#sidebar-menu li span{display:none;}#sidebar-menu li{padding:1.4rem;text-align:center;}#sidebar-menu li[data-icon]::before{font-size:2rem;}}
+    @media(max-width:768px){.wrapper{flex-direction:column;}.sidebar{width:100%;height:auto;padding:1.8rem;}.main{padding:1.4rem;}.kpi-grid{grid-template-columns:1fr;}.header-bar{flex-direction:column;gap:1.2rem;text-align:center;}}
+  </style>
+</head>
+<body data-theme="dark">
+
+<!-- ==== MODALS ==== -->
+<div id="edit-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header"><h3>Edit Maintenance Task</h3><button class="close-modal" onclick="closeEditModal()">X</button></div>
+    <form id="edit-maint-form">
+      <input type="hidden" id="edit-index">
+      <div class="form-group"><label>Equipment</label><input id="edit-equipment" list="loco-list" required></div>
+      <div class="form-group"><label>Task</label><input id="edit-task" type="text" required></div>
+      <div class="form-group"><label>Interval</label>
+        <select id="edit-interval" required><option>weekly</option><option>monthly</option><option>quarterly</option></select>
+      </div>
+      <div class="form-group"><label>Last Done</label><input id="edit-last" type="date" required></div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:1rem;">
+        <button type="button" class="warn" onclick="closeEditModal()">Cancel</button>
+        <button type="submit" class="primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="add-maint-modal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header"><h3>Add Maintenance Task</h3><button class="close-modal" onclick="closeAddMaintModal()">X</button></div>
+    <form id="add-maint-form">
+      <div class="form-group"><label>Equipment</label><input list="loco-list" required></div>
+      <div class="form-group"><label>Task</label><input type="text" required></div>
+      <div class="form-group"><label>Interval</label>
+        <select required><option>weekly</option><option>monthly</option><option>quarterly</option></select>
+      </div>
+      <div class="form-group"><label>Last Done</label><input type="date" id="m-last" required></div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:1rem;">
+        <button type="button" class="warn" onclick="closeAddMaintModal()">Cancel</button>
+        <button type="submit" class="primary">Add Task</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="live-indicator">LIVE SYNC • 0.3s</div>
+
+<datalist id="loco-list"></datalist>
+
+<div class="wrapper">
+  <div class="sidebar">
+    <div class="logo-container">
+      <img class="logo-img" src="https://apventures.com/wp-content/uploads/2023/06/image-35.jpeg" alt="Impala Platinum Logo">
+    </div>
+    <div class="theme-toggle-wrapper">
+      <button class="theme-toggle" onclick="toggleTheme()">Dark Mode</button>
+
+    </div>
+    <ul id="sidebar-menu">
+      <li class="active" data-section="dashboard" data-icon="📊"><span>Dashboard</span></li>
+      <li data-section="add-equipment" data-icon="🚂"><span>+ Equipment</span></li>
+      <li data-section="add-status" data-icon="🔄"><span>Status Update</span></li>
+      <li data-section="search-status" data-icon="🔍"><span>Search</span></li>
+      <li data-section="status-log" data-icon="📜"><span>Full Log</span></li>
+      <li data-section="summary" data-icon="📈"><span>Analytics</span></li>
+      <li data-section="manage-equipment" data-icon="⚙️"><span>Equipment List</span></li>
+      <li data-section="maintenance-schedule" data-icon="🛠"><span>Maintenance</span></li>
+      <li data-section="calendar" data-icon="📅"><span>Calendar</span></li>
+      <li data-section="operations-report" data-icon="📜"><span>Ops Report</span></li>
+    </ul>
+  </div>
+
+  <div class="main">
+    <div class="container">
+
+      <!-- DASHBOARD -->
+      <section id="dashboard">
+        <div class="header-bar">
+          <h1>REAL-TIME PLATINUM OPERATIONS</h1>
+          <div style="display:flex;gap:14px;align-items:center;">
+            <select id="shaft-filter" style="padding:12px 16px;border-radius:12px;border:none;font-weight:600;background:#fff;color:#000;" onchange="filterDashboard()"></select>
+            <button class="export primary" onclick="exportDashboardPDF()">Export Dashboard (PDF)</button>
+          </div>
+        </div>
+
+        <div id="high-risk-alerts" class="alert-banner alert-high-risk hidden">
+          <strong>HIGH RISK EQUIPMENT</strong>
+          <ul id="high-risk-list" class="alert-list"></ul>
+        </div>
+
+        <div id="predictive-alerts" class="alert-banner alert-predictive hidden">
+          <strong>PREDICTIVE MAINTENANCE</strong>
+          <ul id="predictive-list" class="alert-list"></ul>
+        </div>
+
+        <div class="kpi-grid" id="kpi-grid"></div>
+
+        <div class="chart-wrapper">
+          <div class="chart-title">Equipment Availability (%)</div>
+          <div class="chart-container"><canvas id="availabilityChart"></canvas></div>
+        </div>
+
+        <div class="chart-wrapper">
+          <div class="chart-title">Failure Count by Equipment</div>
+          <div class="chart-container"><canvas id="failuresChart"></canvas></div>
+        </div>
+
+        <div class="chart-wrapper">
+          <div class="chart-title">MTTF (Mean Time To Failure) - Days</div>
+          <div class="chart-container"><canvas id="mttfChart"></canvas></div>
+        </div>
+
+        <div class="chart-wrapper">
+          <div class="chart-title">Delay Reasons (This Week)</div>
+          <div class="chart-container"><canvas id="delayChart"></canvas></div>
+        </div>
+
+        <div class="upcoming-maintenance" id="upcoming-maintenance" style="background:linear-gradient(135deg,rgba(227,242,253,.25),rgba(187,222,251,.25));padding:2rem;border-radius:var(--radius);border-left:8px solid var(--maint);margin-top:2.2rem;box-shadow:var(--shadow);backdrop-filter:blur(10px);">
+          <h3 style="color:var(--maint);margin-bottom:1.4rem;font-size:1.6rem;">Upcoming Maintenance Schedule</h3>
+          <div id="maintenance-list"></div>
+        </div>
+      </section>
+
+      <!-- ADD EQUIPMENT -->
+      <section id="add-equipment" class="hidden">
+        <div class="header-bar"><h1>Add New Equipment</h1></div>
+        <form id="add-eq-form" style="max-width:600px;">
+          <div class="form-group"><label>Shaft</label><select id="shaft" required><option value="">Select Shaft</option></select></div>
+          <div class="form-group"><label>Level</label><input id="level" type="text" required></div>
+          <div class="form-group"><label>Loco Size</label><input id="loco-size" type="text" required></div>
+          <div class="form-group"><label>Loco Number</label><input id="loco-number" type="text" required></div>
+          <div class="form-group"><label>SECTION</label><input id="section" type="text" required></div>
+          <button type="submit" class="primary">Add Equipment</button>
+        </form>
+      </section>
+
+      <!-- STATUS UPDATE -->
+      <section id="add-status" class="hidden">
+        <div class="header-bar"><h1>Status Update</h1></div>
+        <form id="add-status-form" style="max-width:600px;">
+          <div class="form-group"><label>Date</label><input id="u-date" type="date" required></div>
+          <div class="form-group"><label>Time</label><input id="u-time" type="time" required></div>
+          <div class="form-group"><label>Equipment ID</label><input id="u-loco" list="loco-list" required></div>
+          <div class="form-group"><label>Status</label><select id="u-status"><option>Fixed</option><option>Down</option></select></div>
+          <div class="form-group"><label>Shift</label><select id="u-shift"><option>Morning</option><option>Afternoon</option><option>Night</option></select></div>
+          <div class="form-group"><label>Reason/Fault</label><textarea id="u-reason" required></textarea></div>
+          <div class="form-group"><label>Downtime Hours</label><input id="u-downtime" type="number" step="0.1" min="0"></div>
+          <div class="form-group"><label>Is Failure?</label><select id="u-failure"><option value="0">No</option><option value="1">Yes</option></select></div>
+          <button type="submit" class="primary">Submit Update</button>
+        </form>
+      </section>
+
+      <!-- SEARCH -->
+      <section id="search-status" class="hidden">
+        <div class="header-bar"><h1>Search Status</h1></div>
+        <form id="search-form" style="display:flex;gap:14px;align-items:end;flex-wrap:wrap;max-width:800px;">
+          <div class="form-group"><label>Equipment ID</label><input id="s-loco" list="loco-list"></div>
+          <div class="form-group"><label>Date (optional)</label><input id="s-date" type="date"></div>
+          <div class="form-group"><label>Job Order Equipment</label><select id="job-loco"><option value="">Select Equipment</option></select></div>
+          <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+            <input type="checkbox" id="show-all-history">
+            <label for="show-all-history" style="margin:0;font-weight:600;white-space:nowrap;">Show Full History</label>
+          </div>
+          <button type="submit" class="primary">Search</button>
+          <button type="button" class="maint" onclick="generateJobPDF()">Job Order PDF</button>
+        </form>
+        <div id="search-results" style="margin-top:1.8rem;"></div>
+      </section>
+
+      <!-- FULL LOG -->
+      <section id="status-log" class="hidden">
+        <div class="header-bar">
+          <h1>Full Status Log</h1>
+          <button class="export primary" onclick="exportLogCSV()">Export Log (CSV)</button>
+        </div>
+        <table id="log-table" style="margin-top:1.8rem;">
+          <thead><tr><th>Date</th><th>Time</th><th>ID</th><th>Status</th><th>Shift</th><th>Fault</th><th>Down Hrs</th><th>Failure</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- ANALYTICS -->
+      <section id="summary" class="hidden">
+        <div class="header-bar">
+          <h1>Fleet Analytics</h1>
+          <button class="export primary" onclick="exportDashboardPDF()">Export Analytics Report</button>
+        </div>
+        <table id="summary-table" style="margin-top:1.8rem;">
+          <thead><tr><th>ID</th><th>Updates</th><th>Total Days</th><th>Down Days</th><th>Op Days</th><th>Failures</th><th>MTTF</th><th>Avail %</th><th>Last Update</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- EQUIPMENT LIST -->
+      <section id="manage-equipment" class="hidden">
+        <div class="header-bar"><h1>Equipment List</h1></div>
+        <table id="equipment-table">
+          <thead><tr><th>Shaft</th><th>Level</th><th>Size</th><th>Loco Number</th><th>SECTION</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- MAINTENANCE SCHEDULE -->
+      <section id="maintenance-schedule" class="hidden">
+        <div class="header-bar">
+          <h1>Maintenance Schedule</h1>
+          <div>
+            <button class="primary" onclick="document.getElementById('add-maint-modal').classList.add('active')">+ Add Task</button>
+            <button class="export primary" onclick="exportMaintPDF()">Export PDF</button>
+          </div>
+        </div>
+
+        <table id="maint-table">
+          <thead>
+            <tr>
+              <th>Equipment</th><th>Task</th><th>Interval</th><th>Last Done</th><th>Due</th><th>Days Left</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- CALENDAR -->
+      <section id="calendar" class="hidden">
+        <div class="header-bar"><h1>Maintenance Calendar</h1></div>
+        <div id="calendar-div"></div>
+      </section>
+
+      <!-- OPERATIONS REPORT -->
+      <section id="operations-report" class="hidden">
+        <div class="header-bar">
+          <h1>All Operations Report</h1>
+          <button class="export primary" onclick="exportOperationsReportPDF()">Export Report (PDF)</button>
+        </div>
+        <div style="background:var(--card);padding:2rem;border-radius:var(--radius);box-shadow:var(--shadow);margin:1.8rem 0;">
+          <h2 style="color:var(--teal);margin-bottom:1rem;">Operation Status</h2>
+          <table style="width:100%;">
+            <thead><tr><th>Status</th><th>Count</th><th>Percentage</th></tr></thead>
+            <tbody id="op-status-tbody"></tbody>
+          </table>
+        </div>
+
+        <div style="background:var(--card);padding:2rem;border-radius:var(--radius);box-shadow:var(--shadow);margin:1.8rem 0;">
+          <h2 style="color:var(--teal);margin-bottom:1rem;">Problem Equipment</h2>
+          <table style="width:100%;">
+            <thead><tr><th>Equipment ID</th><th>Status</th><th>Color</th><th>Last Reason/Fault</th><th>Total Downtime Hours</th></tr></thead>
+            <tbody id="problem-equipment-tbody"></tbody>
+          </table>
+        </div>
+
+        <div style="background:var(--card);padding:2rem;border-radius:var(--radius);box-shadow:var(--shadow);margin:1.8rem 0;">
+          <h2 style="color:var(--teal);margin-bottom:1rem;">Focus Areas: High Risk Equipment</h2>
+          <table style="width:100%;">
+            <thead><tr><th>Equipment ID</th><th>Number of Failures</th><th>MTTF (Days)</th><th>Availability %</th></tr></thead>
+            <tbody id="high-risk-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // ==== GLOBAL DATA ====
+  let eq = [], up = [], mt = [], delaysData = [], calendar = null, charts = {};
+
+  // ==== FULL SHAFTS LIST ====
+  const shafts = [
+    '0 Shaft', '1 Shaft', '2 Shaft', '3 Shaft', '4 Shaft', '5 Shaft', '6 Shaft', '7 Shaft',
+    '7A Shaft', '8 Shaft', '9 Shaft', '10 Shaft', '10D', '11 Shaft', '11C Shaft', '11D',
+    '12 Shaft', '12 North Shaft', '12S', '14 Shaft', '14D', '16 Shaft', '17 Shaft',
+    '20 Shaft', 'CLAPHAM', 'DRIKOP', 'E&F Shaft', 'NORTH SHAFT', 'SOUTH SHAFT',
+    'STYLDRIFT', 'Winnaarshoek', 'Forest Hill', 'Offset Underground',
+    'UG2 Main Decline', 'Merensky Main Decline', 'UG2 North Decline',
+    '367-KT (Kalkfontein)', '368-KT (Buffelshoek)', '370-KT (Richmond)',
+    '372-KT (Dwarsrivier)', '373-KT (De Grooteboom)', '374-KT (Tweefontein)',
+    'Leeuwkop Shaft'
+  ];
+
+  // ==== LOCAL STORAGE HELPERS ====
+  function get(key) { return JSON.parse(localStorage.getItem(key)) || []; }
+  function set(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+  // ==== THEME ====
+  window.addEventListener('load', () => {
+    const saved = localStorage.getItem('theme') || 'dark';
+    document.body.setAttribute('data-theme', saved);
+    document.querySelector('.theme-toggle').textContent = saved === 'dark' ? 'Dark Mode' : 'Light Mode';
+  });
+  function toggleTheme() {
+    const cur = document.body.getAttribute('data-theme');
+    const newTheme = cur === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.querySelector('.theme-toggle').textContent = newTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
+  }
+
+  // ==== DATE CALCULATIONS ====
+  function calculateNextDue(lastDone, interval) {
+    if (!lastDone) return '';
+    const d = new Date(lastDone);
+    if (interval === 'weekly') d.setDate(d.getDate() + 7);
+    else if (interval === 'monthly') d.setMonth(d.getMonth() + 1);
+    else if (interval === 'quarterly') d.setMonth(d.getMonth() + 3);
+    return d.toISOString().slice(0,10);
+  }
+  function calculateDaysLeft(lastDone, interval) {
+    if (!lastDone) return NaN;
+    const next = new Date(calculateNextDue(lastDone, interval));
+    const today = new Date(); today.setHours(0,0,0,0);
+    next.setHours(0,0,0,0);
+    return Math.ceil((next - today) / 86400000);
+  }
+
+  // ==== NAVIGATION ====
+  document.querySelectorAll('#sidebar-menu li').forEach(li => {
+    li.addEventListener('click', () => show(li.dataset.section));
+  });
+  function show(section) {
+    document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+    const el = document.getElementById(section);
+    if (el) el.classList.remove('hidden');
+    document.querySelectorAll('#sidebar-menu li').forEach(l => l.classList.remove('active'));
+    const activeLi = document.querySelector(`#sidebar-menu li[data-section="${section}"]`);
+    if (activeLi) activeLi.classList.add('active');
+
+    if (section === 'calendar') setTimeout(initCalendar, 0);
+    if (section === 'maintenance-schedule') populateMaintTable();
+    if (section === 'operations-report') populateOperationsReport();
+  }
+
+  // ==== CALENDAR ====
+  function initCalendar() {
+    const el = document.getElementById('calendar-div');
+    if (!el) return;
+    if (calendar) calendar.destroy();
+    const events = mt.map(m => ({
+      title: `${m.equipment} - ${m.task}`,
+      start: calculateNextDue(m.lastDone, m.interval),
+      backgroundColor: '#3498db', borderColor: '#2980b9', textColor: '#fff'
+    }));
+    calendar = new FullCalendar.Calendar(el, {
+      initialView: 'dayGridMonth', height: 'auto',
+      headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' },
+      events, eventDisplay: 'block', dayMaxEvents: true, contentHeight: 'auto', stickyHeaderDates: true
+    });
+    calendar.render();
+  }
+
+  // ==== MAINTENANCE TABLE ====
+  function populateMaintTable() {
+    const tbody = document.querySelector('#maint-table tbody');
+    tbody.innerHTML = mt.map((m,i) => {
+      const next = calculateNextDue(m.lastDone, m.interval);
+      const days = calculateDaysLeft(m.lastDone, m.interval);
+      const display = isNaN(days) ? '-' : (days >= 0 ? `${days} days` : `${Math.abs(days)} days overdue`);
+      const color = days > 3 ? '#2ecc71' : '#e74c3c';
+      return `<tr>
+        <td>${m.equipment}</td><td>${m.task}</td><td>${m.interval}</td><td>${m.lastDone}</td>
+        <td>${next}</td><td style="color:${color};font-weight:700;">${display}</td>
+        <td class="maint-actions">
+          <button class="done-btn" onclick="markDone(${i})">Done</button>
+          <button class="edit-btn" onclick="openEditModal(${i})">Edit</button>
+          <button class="delete-btn" onclick="deleteMaint(${i})">Delete</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+  function markDone(idx) {
+    const today = new Date().toISOString().slice(0,10);
+    mt[idx].lastDone = today;
+    set('maintenance', mt);
+    populateMaintTable(); populateDashboard();
+    if (!document.getElementById('calendar').classList.contains('hidden')) initCalendar();
+  }
+  function deleteMaint(idx) {
+    if (confirm('Delete this task?')) {
+      mt.splice(idx,1); set('maintenance', mt);
+      populateMaintTable(); populateDashboard();
+      if (!document.getElementById('calendar').classList.contains('hidden')) initCalendar();
+    }
+  }
+  function openEditModal(idx) {
+    const m = mt[idx];
+    document.getElementById('edit-index').value = idx;
+    document.getElementById('edit-equipment').value = m.equipment;
+    document.getElementById('edit-task').value = m.task;
+    document.getElementById('edit-interval').value = m.interval;
+    document.getElementById('edit-last').value = m.lastDone;
+    document.getElementById('edit-modal').classList.add('active');
+  }
+  function closeEditModal() { document.getElementById('edit-modal').classList.remove('active'); }
+  function closeAddMaintModal() { document.getElementById('add-maint-modal').classList.remove('active'); }
+
+  // ==== FORMS ====
+  document.getElementById('add-maint-form').onsubmit = e => {
+    e.preventDefault();
+    mt.push({ equipment:e.target[0].value, task:e.target[1].value,
+              interval:e.target[2].value, lastDone:e.target[3].value });
+    set('maintenance', mt); closeAddMaintModal(); e.target.reset();
+    populateMaintTable(); populateDashboard();
+    if (!document.getElementById('calendar').classList.contains('hidden')) initCalendar();
+  };
+  document.getElementById('edit-maint-form').onsubmit = e => {
+    e.preventDefault();
+    const i = parseInt(document.getElementById('edit-index').value);
+    mt[i] = { equipment:e.target[0].value, task:e.target[1].value,
+              interval:e.target[2].value, lastDone:e.target[3].value };
+    set('maintenance', mt); closeEditModal();
+    populateMaintTable(); populateDashboard();
+    if (!document.getElementById('calendar').classList.contains('hidden')) initCalendar();
+  };
+  document.getElementById('add-eq-form').onsubmit = e => {
+    e.preventDefault();
+    eq.push({ Shaft:e.target[0].value, Level:e.target[1].value,
+              'Loco Size':e.target[2].value, 'Loco Number':e.target[3].value,
+              SECTION:e.target[4].value });
+    set('equipment', eq); fillDatalist(); populateDashboard(); populateEquipmentTable(); e.target.reset();
+  };
+  document.getElementById('add-status-form').onsubmit = e => {
+    e.preventDefault();
+    up.push({ Date:e.target[0].value, Time:e.target[1].value,
+              'Equipment ID':e.target[2].value, Status:e.target[3].value,
+              Shift:e.target[4].value, 'Reason/Fault':e.target[5].value,
+              'Downtime Hours':parseFloat(e.target[6].value)||0,
+              'Is Failure?':parseInt(e.target[7].value) });
+    set('updates', up); populateDashboard(); populateLogTable(); populateSummaryTable(); e.target.reset();
+  };
+
+  // ==== SEARCH ====
+  document.getElementById('search-form').onsubmit = e => {
+    e.preventDefault();
+    const loco = e.target[0].value.trim();
+    const date = e.target[1].value;
+    const showAll = e.target[2].checked;
+
+    const resultsDiv = document.getElementById('search-results');
+    resultsDiv.innerHTML = '';
+
+    const equipment = eq.find(e => e['Loco Number'] === loco);
+    if (!equipment) {
+      resultsDiv.innerHTML = '<p style="color:#e74c3c; font-weight:700;">Equipment not found.</p>';
+      return;
+    }
+
+    const header = `
+      <div style="background:rgba(13,71,161,.15);padding:1rem;border-radius:12px;margin-bottom:1rem;">
+        <strong>Equipment:</strong> ${equipment['Loco Number']} – ${equipment.Shaft}<br>
+        <strong>Level:</strong> ${equipment.Level} | 
+        <strong>Size:</strong> ${equipment['Loco Size']} | 
+        <strong>Section:</strong> ${equipment.SECTION}
+      </div>`;
+
+    let updates = up.filter(u => u['Equipment ID'] === loco);
+    if (date && !showAll) updates = updates.filter(u => u.Date === date);
+    updates.sort((a,b) => new Date(b.Date+' '+b.Time) - new Date(a.Date+' '+a.Time));
+
+    const updatesHTML = updates.length ? updates.map(u => `
+      <div style="padding:12px;border-bottom:1px solid rgba(255,255,255,.12);">
+        <strong>${u.Date} ${u.Time}</strong> – 
+        <span style="color:${u.Status==='Fixed'?'#2ecc71':'#e74c3c'}">${u.Status}</span>:
+        ${u['Reason/Fault']} 
+        ${u['Downtime Hours']?`<em>(${u['Downtime Hours']} h)</em>`:''}
+        ${u['Is Failure?']===1?'<span class="risk-badge risk-high" style="margin-left:8px;">FAILURE</span>':''}
+      </div>`).join('') : '<p style="color:#f39c12;font-style:italic;">No updates yet.</p>';
+
+    resultsDiv.innerHTML = header + updatesHTML;
+  };
+
+  // ==== DASHBOARD HELPERS ====
+  function getStatus(id) {
+    const updates = up.filter(u => u['Equipment ID'] === id);
+    if (!updates.length) return {status:'Unknown', days:0};
+    const latest = updates.sort((a,b)=>new Date(b.Date+' '+b.Time)-new Date(a.Date+' '+a.Time))[0];
+    const downUpdates = updates.filter(u=>u.Status!=='Fixed');
+    const lastDown = downUpdates.length ? downUpdates.sort((a,b)=>new Date(b.Date+' '+b.Time)-new Date(a.Date+' '+a.Time))[0] : null;
+    const days = lastDown ? Math.floor((new Date() - new Date(lastDown.Date+' '+lastDown.Time)) / 86400000) : 0;
+    return {status:latest.Status==='Fixed'?'Operational':'Down', days};
+  }
+
+  function fillDatalist() {
+    const list = document.getElementById('loco-list');
+    list.innerHTML = eq.map(e=>`<option value="${e['Loco Number']}">${e['Loco Number']} - ${e.Shaft}</option>`).join('');
+    const jobSel = document.getElementById('job-loco');
+    jobSel.innerHTML = '<option value="">Select Equipment</option>' + eq.map(e=>`<option value="${e['Loco Number']}">${e['Loco Number']}</option>`).join('');
+
+    const sf = document.getElementById('shaft-filter');
+    sf.innerHTML = '<option value="">All Shafts</option>' + shafts.map(s=>`<option>${s}</option>`).join('');
+    const addShaft = document.getElementById('shaft');
+    addShaft.innerHTML = '<option value="">Select Shaft</option>' + shafts.map(s=>`<option>${s}</option>`).join('');
+  }
+
+  // ==== POPULATE DASHBOARD ====
+  function populateDashboard() {
+    const shaft = document.getElementById('shaft-filter').value;
+    const filtered = shaft ? eq.filter(e=>e.Shaft===shaft) : eq;
+    const total = filtered.length;
+    const operational = filtered.filter(e=>getStatus(e['Loco Number']).status==='Operational').length;
+    const downShort = filtered.filter(e=>getStatus(e['Loco Number']).status==='Down' && getStatus(e['Loco Number']).days <=7).length;
+    const downLong  = filtered.filter(e=>getStatus(e['Loco Number']).status==='Down' && getStatus(e['Loco Number']).days >7).length;
+    const avail = total ? ((operational/total)*100).toFixed(1) : 0;
+
+    document.getElementById('kpi-grid').innerHTML = `
+      <div class="kpi-card green"><h2>${operational}</h2><p>Operational</p></div>
+      <div class="kpi-card orange"><h2>${downShort}</h2><p>Down Less Than 7d</p></div>
+      <div class="kpi-card red"><h2>${downLong}</h2><p>Down Greater Than 7d</p></div>
+      <div class="kpi-card" style="background:#6c5ce7;color:#fff;"><h2>${avail}%</h2><p>Fleet Availability</p></div>`;
+
+    // ---- Date range for filtered equipment only ----
+    const dates = filtered.flatMap(e => up.filter(u=>u['Equipment ID']===e['Loco Number']).map(u=>u.Date));
+    const minD = dates.length ? dates.reduce((a,c)=>c<a?c:a) : new Date().toISOString().slice(0,10);
+    const maxD = dates.length ? dates.reduce((a,c)=>c>a?c:a) : new Date().toISOString().slice(0,10);
+    const totalDays = Math.ceil((new Date(maxD)-new Date(minD))/86400000)+1;
+
+    const availLabels=[],availData=[],failLabels=[],failData=[],mttfData=[];
+    filtered.forEach(e=>{
+      const id = e['Loco Number'];
+      const eu = up.filter(u=>u['Equipment ID']===id);
+      const downH = eu.reduce((s,u)=>s+(u['Downtime Hours']||0),0);
+      const downD = downH/24;
+      const opD = totalDays - downD;
+      const failures = eu.filter(u=>u['Is Failure?']===1).length;
+      const mttf = failures>0 ? (opD/failures) : null;
+
+      availLabels.push(id); availData.push(totalDays>0?((opD/totalDays)*100).toFixed(1):0);
+      failLabels.push(id); failData.push(failures);
+      mttfData.push(mttf);
+    });
+
+    // destroy old charts
+    Object.values(charts).forEach(c=>c && c.destroy());
+
+    charts.avail = new Chart(document.getElementById('availabilityChart').getContext('2d'), {
+      type:'bar', data:{labels:availLabels,datasets:[{label:'Availability %',data:availData,backgroundColor:'#00d2d3',borderRadius:8}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100}}}
+    });
+    charts.fail = new Chart(document.getElementById('failuresChart').getContext('2d'), {
+      type:'bar', data:{labels:failLabels,datasets:[{label:'Failures',data:failData,backgroundColor:'#e74c3c',borderRadius:8}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+    });
+    charts.mttf = new Chart(document.getElementById('mttfChart').getContext('2d'), {
+      type:'bar', data:{labels:availLabels,datasets:[{label:'MTTF Days',data:mttfData,backgroundColor:'#3498db',borderRadius:8}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
+    });
+    charts.delay = new Chart(document.getElementById('delayChart').getContext('2d'), {
+      type:'pie', data:{labels:['Awaiting Spares','Safety'],datasets:[{data:[8,4],backgroundColor:['#f39c12','#e74c3c']}]},
+      options:{responsive:true,maintainAspectRatio:false}
+    });
+
+    // high-risk
+    const high = filtered.filter(e=>getStatus(e['Loco Number']).days>7);
+    document.getElementById('high-risk-list').innerHTML = high.map(e=>`<li class="alert-item"><span>Loco ${e['Loco Number']} - ${e.Shaft}</span><span class="risk-badge risk-high">CRITICAL</span></li>`).join('');
+    document.getElementById('high-risk-alerts').classList.toggle('hidden',high.length===0);
+
+    // upcoming maintenance
+    mt.sort((a,b)=>calculateDaysLeft(a.lastDone,a.interval)-calculateDaysLeft(b.lastDone,b.interval));
+    const maintList = document.getElementById('maintenance-list');
+    maintList.innerHTML = mt.map(m=>{
+      const days = calculateDaysLeft(m.lastDone,m.interval);
+      const display = isNaN(days) ? '-' : (days>=0?`${days} days left`:`${Math.abs(days)} days overdue`);
+      const color = days>3?'#2ecc71':'#e74c3c';
+      return `<div style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,.12);display:flex;justify-content:space-between;">
+        <span><strong>${m.equipment}</strong> → ${m.task}</span>
+        <span style="color:${color};font-weight:700;">${display}</span>
+      </div>`;
+    }).join('');
+
+    // predictive
+    const predictive = mt.filter(m=>calculateDaysLeft(m.lastDone,m.interval)<=7 && !isNaN(calculateDaysLeft(m.lastDone,m.interval)));
+    document.getElementById('predictive-list').innerHTML = predictive.map(m=>{
+      const days = calculateDaysLeft(m.lastDone,m.interval);
+      const label = days>0?`${days} days`:'OVERDUE';
+      return `<li class="alert-item"><span>${m.equipment} - ${m.task}</span><span class="risk-badge risk-predict">${label}</span></li>`;
+    }).join('');
+    document.getElementById('predictive-alerts').classList.toggle('hidden',predictive.length===0);
+  }
+
+  // ==== OTHER POPULATE FUNCTIONS ====
+  function populateOperationsReport() {
+    // The original hard-coded values – keep them for the Ops Report page
+    const opStatus = [{status:'Covered (Green)',count:44,percentage:'93.62%'},
+                      {status:'Covered within 7 days (Orange)',count:3,percentage:'6.38%'},
+                      {status:'Overdue (Red)',count:0,percentage:'0.00%'},
+                      {status:'Total',count:47,percentage:'100.00%'}];
+    const problem = [{id:'15',status:'Down',color:'ORANGE',fault:'BRAKES',downtime:384.0},
+                     {id:'270',status:'Down',color:'ORANGE',fault:'Not Starting',downtime:0.0},
+                     {id:'155',status:'Down',color:'ORANGE',fault:'BRAKES FAILURE',downtime:0.0}];
+    const highRisk = [{id:'15',failures:15,mttf:11.33,availability:'91.40%'},
+                      {id:'217',failures:6,mttf:30.00,availability:'96.77%'}];
+
+    document.getElementById('op-status-tbody').innerHTML = opStatus.map(r=>`<tr><td>${r.status}</td><td>${r.count}</td><td>${r.percentage}</td></tr>`).join('');
+    document.getElementById('problem-equipment-tbody').innerHTML = problem.map(r=>`<tr><td>${r.id}</td><td>${r.status}</td><td style="color:#f39c12;">${r.color}</td><td>${r.fault}</td><td>${r.downtime}</td></tr>`).join('');
+    document.getElementById('high-risk-tbody').innerHTML = highRisk.map(r=>`<tr><td>${r.id}</td><td>${r.failures}</td><td>${r.mttf}</td><td>${r.availability}</td></tr>`).join('');
+  }
+
+  function populateLogTable() {
+    const tbody = document.querySelector('#log-table tbody');
+    tbody.innerHTML = up.sort((a,b)=>new Date(b.Date+' '+b.Time)-new Date(a.Date+' '+a.Time))
+      .map(u=>`<tr><td>${u.Date}</td><td>${u.Time}</td><td>${u['Equipment ID']}</td><td>${u.Status}</td>
+        <td>${u.Shift}</td><td>${u['Reason/Fault']}</td><td>${u['Downtime Hours']||0}</td><td>${u['Is Failure?']===1?'Yes':'No'}</td></tr>`).join('');
+  }
+  function populateSummaryTable() {
+    const dates = up.map(u=>u.Date);
+    const minD = dates.length?dates.reduce((a,c)=>c<a?c:a):new Date().toISOString().slice(0,10);
+    const maxD = dates.length?dates.reduce((a,c)=>c>a?c:a):new Date().toISOString().slice(0,10);
+    const totalDays = Math.ceil((new Date(maxD)-new Date(minD))/86400000)+1;
+    const tbody = document.querySelector('#summary-table tbody');
+    tbody.innerHTML = eq.map(e=>{
+      const id=e['Loco Number'];
+      const eu=up.filter(u=>u['Equipment ID']===id);
+      const downH=eu.reduce((s,u)=>s+(u['Downtime Hours']||0),0);
+      const downD=downH/24; const opD=totalDays-downD;
+      const failures=eu.filter(u=>u['Is Failure?']===1).length;
+      const mttf=failures>0?(opD/failures).toFixed(1):'N/A';
+      const avail=totalDays>0?((opD/totalDays)*100).toFixed(1):0;
+      const last=eu.sort((a,b)=>new Date(b.Date+' '+b.Time)-new Date(a.Date+' '+a.Time))[0];
+      const status=getStatus(id).status;
+      return `<tr><td>${id}</td><td>${eu.length}</td><td>${totalDays}</td><td>${downD.toFixed(1)}</td>
+        <td>${opD.toFixed(1)}</td><td>${failures}</td><td>${mttf}</td><td>${avail}%</td>
+        <td>${last?last.Date+' '+last.Time:'-'}</td><td>${status}</td></tr>`;
+    }).join('');
+  }
+  function populateEquipmentTable() {
+    const tbody = document.querySelector('#equipment-table tbody');
+    tbody.innerHTML = eq.map(e=>`<tr><td>${e.Shaft}</td><td>${e.Level}</td><td>${e['Loco Size']}</td>
+      <td>${e['Loco Number']}</td><td>${e.SECTION}</td></tr>`).join('');
+  }
+
+  // ==== FILTER ====
+  function filterDashboard() { populateDashboard(); }
+
+  // ==== EXPORTS ====
+  function generateJobPDF() {
+    const id = document.getElementById('job-loco').value || document.getElementById('s-loco').value;
+    if (!id) return alert('Select an Equipment ID first');
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF();
+    let y = 16;
+    doc.setFontSize(12);
+    doc.text('Job Order:',16,y); y+=12;
+    doc.text('Follow correct procedure to complete the task and attach risk assessment',16,y); y+=16;
+    doc.text('Work carried out / comments:',16,y); y+=10;
+    for (let i=0;i<3;i++){doc.line(16,y,190,y);y+=10;} y+=10;
+    doc.text('Job duration:',16,y); y+=10;
+    doc.text('Start date ______   Start time ______   End date ______   End time ______   Duration ______',16,y); y+=16;
+    doc.text('Failure Information:',16,y); y+=10;
+    doc.autoTable({startY:y,head:[['Object part','Problem','Cause of damage','Activity carried out']],body:[['','','','']],theme:'grid',headStyles:{fillColor:[0,128,128]}});
+    y = doc.lastAutoTable.finalY + 12;
+    doc.text("Five Why's:",16,y); y+=10;
+    doc.autoTable({startY:y,head:[['Why','Why','Why','Why','Why']],body:[['','','','','']],theme:'grid',headStyles:{fillColor:[0,128,128]}});
+    y = doc.lastAutoTable.finalY + 12;
+    doc.text('Lost time/delays (Hrs):',16,y); y+=10;
+    doc.autoTable({startY:y,head:[['Safety','Work Issues','Awaiting Spares','Hospital Visits','Awaiting Transport','Travel Time','Weather','Machn. Rel.']],body:[['SA','WI','AS','HV','AT','TT','WH','MR']],theme:'grid',headStyles:{fillColor:[0,128,128]}});
+    y = doc.lastAutoTable.finalY + 12;
+    doc.text('Name- Artisan: ______   Sign: ______   Date: ______',16,y); y+=16;
+    doc.text('Comments- Foreman:',16,y); y+=10;
+    for (let i=0;i<3;i++){doc.line(16,y,190,y);y+=10;} y+=10;
+    doc.text('Name- Foreman: ______   Sign: ______   Date: ______',16,y);
+    doc.save(`Job_Order_${id}.pdf`);
+  }
+
+  function exportOperationsReportPDF() {
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF('p','mm','a4');
+    let y = 16;
+    doc.setFontSize(18); doc.setTextColor(0,128,128);
+    doc.text('All Operations Report',16,y); y+=12;
+    doc.setFontSize(10); doc.setTextColor(100);
+    doc.text(`Generated: ${new Date().toLocaleString('en-ZA')}`,16,y); y+=12;
+
+    doc.setFontSize(16);
+    doc.text('Operation Status',20,y); y+=10;
+    doc.autoTable({startY:y,head:[['Status','Count','Percentage']],body:[
+      ['Covered (Green)','44','93.62%'],['Covered within 7 days (Orange)','3','6.38%'],
+      ['Overdue (Red)','0','0.00%'],['Total','47','100.00%']
+    ],theme:'grid',headStyles:{fillColor:[0,128,128]}}); y = doc.lastAutoTable.finalY + 20;
+
+    doc.setFontSize(16);
+    doc.text('Problem Equipment',20,y); y+=10;
+    doc.autoTable({startY:y,head:[['Equipment ID','Status','Color','Last Reason/Fault','Total Downtime Hours']],body:[
+      ['15','Down','ORANGE','BRAKES','384.0'],
+      ['270','Down','ORANGE','Not Starting','0.0'],
+      ['155','Down','ORANGE','BRAKES FAILURE','0.0']
+    ],theme:'grid',headStyles:{fillColor:[0,128,128]}}); y = doc.lastAutoTable.finalY + 20;
+
+    doc.setFontSize(16);
+    doc.text('Focus Areas: High Risk Equipment',20,y); y+=10;
+    doc.autoTable({startY:y,head:[['Equipment ID','Number of Failures','MTTF (Days)','Availability %']],body:[
+      ['15','15','11.33','91.40%'],['217','6','30.00','96.77%']
+    ],theme:'grid',headStyles:{fillColor:[0,128,128]}});
+
+    doc.save(`All_Operations_Report_${new Date().toISOString().slice(0,10)}.pdf`);
+  }
+
+  async function exportDashboardPDF() {
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF('l','mm','a4');
+    let y = 20;
+
+    // Title
+    doc.setFontSize(22); doc.setTextColor(0,128,128);
+    doc.text('Impala RBE Dashboard', 15, y); y += 15;
+    doc.setFontSize(10); doc.setTextColor(80);
+    doc.text(`Generated: ${new Date().toLocaleString('en-ZA')}`, 15, y); y += 15;
+
+    // KPI cards
+    const kpis = [
+      {label:'Operational',value:document.querySelectorAll('.kpi-card')[0]?.querySelector('h2').textContent||'0',color:'#2ecc71'},
+      {label:'Down <7d',value:document.querySelectorAll('.kpi-card')[1]?.querySelector('h2').textContent||'0',color:'#f39c12'},
+      {label:'Down >7d',value:document.querySelectorAll('.kpi-card')[2]?.querySelector('h2').textContent||'0',color:'#e74c3c'},
+      {label:'Availability',value:(document.querySelectorAll('.kpi-card')[3]?.querySelector('h2').textContent||'0')+'%',color:'#6c5ce7'}
+    ];
+    doc.setFontSize(14);
+    kpis.forEach((k,i)=>{
+      doc.setTextColor(k.color === '#6c5ce7' ? 255 : 0);
+      doc.text(`${k.label}: ${k.value}`, 15 + i*70, y);
+    });
+    y += 20;
+
+    // Add canvas images (availability, failures, MTTF)
+    const canvases = ['availabilityChart','failuresChart','mttfChart'];
+    for (const id of canvases) {
+      const canvas = document.getElementById(id);
+      if (canvas) {
+        const img = canvas.toDataURL('image/png');
+        doc.addImage(img, 'PNG', 15, y, 260, 80);
+        y += 90;
+      }
+    }
+
+    doc.save(`Dashboard_${new Date().toISOString().slice(0,10)}.pdf`);
+  }
+
+  function exportLogCSV() {
+    let csv='Date,Time,Equipment ID,Status,Shift,Reason/Fault,Downtime Hours,Is Failure?\n';
+    up.forEach(u=>csv+=`${u.Date},${u.Time},${u['Equipment ID']},${u.Status},${u.Shift},"${u['Reason/Fault']}",${u['Downtime Hours']||0},${u['Is Failure?']===1?'Yes':'No'}\n`);
+    const blob=new Blob([csv],{type:'text/csv'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='RBE_Status_Log.csv'; a.click();
+  }
+
+  async function exportMaintPDF() {
+    const {jsPDF}=window.jspdf; const doc=new jsPDF();
+    const rows=mt.map(m=>{
+      const days=calculateDaysLeft(m.lastDone,m.interval);
+      const disp=isNaN(days)?'-':(days>=0?days:Math.abs(days)+' overdue');
+      return [m.equipment,m.task,m.interval,m.lastDone,calculateNextDue(m.lastDone,m.interval),disp];
+    });
+    doc.autoTable({
+      head:[['Equipment','Task','Interval','Last Done','Due','Days Left']],
+      body:rows, theme:'grid', headStyles:{fillColor:[13,71,161]}
+    });
+    doc.save(`Maintenance_Schedule_${new Date().toISOString().slice(0,10)}.pdf`);
+  }
+
+  // ==== INITIAL LOAD ====
+  eq = get('equipment'); up = get('updates'); mt = get('maintenance'); delaysData = get('delays');
+  if (!eq.length) {
+    eq = [
+      {Shaft:'1 Shaft',Level:'14 Level','Loco Size':'10t Loco','Loco Number':'364',SECTION:'1245'},
+      {Shaft:'CLAPHAM',Level:'15 Level','Loco Size':'8t Loco','Loco Number':'217',SECTION:'5678'},
+      {Shaft:'North Decline',Level:'20 Level','Loco Size':'12t Loco','Loco Number':'412',SECTION:'8901'},
+      {Shaft:'1 Shaft',Level:'16 Level','Loco Size':'10t Loco','Loco Number':'444',SECTION:'2234'},
+      {Shaft:'1 Shaft',Level:'17 Level','Loco Size':'10t Loco','Loco Number':'155',SECTION:'3345'},
+      {Shaft:'1 Shaft',Level:'18 Level','Loco Size':'10t Loco','Loco Number':'158',SECTION:'4456'},
+      {Shaft:'1 Shaft',Level:'19 Level','Loco Size':'10t Loco','Loco Number':'15',SECTION:'5567'},
+      {Shaft:'1 Shaft',Level:'20 Level','Loco Size':'10t Loco','Loco Number':'270',SECTION:'6678'}
+    ];
+    set('equipment',eq);
+  }
+  if (!up.length) {
+    up = [
+      { Date: '2025-11-05', Time: '07:30', 'Equipment ID': '364', Status: 'Fixed', Shift: 'Morning', 'Reason/Fault': 'Brake pads replaced', 'Downtime Hours': 3.5, 'Is Failure?': 1 },
+      { Date: '2025-11-04', Time: '14:20', 'Equipment ID': '217', Status: 'Down', Shift: 'Afternoon', 'Reason/Fault': 'Hydraulic leak', 'Downtime Hours': 8, 'Is Failure?': 1 },
+      { Date: '2025-11-10', Time: '09:00', 'Equipment ID': '15', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'BRAKES', 'Downtime Hours': 384, 'Is Failure?': 1 },
+      { Date: '2025-11-10', Time: '10:00', 'Equipment ID': '270', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'Not Starting', 'Downtime Hours': 0, 'Is Failure?': 1 },
+      { Date: '2025-11-10', Time: '11:00', 'Equipment ID': '155', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'BRAKES FAILURE', 'Downtime Hours': 0, 'Is Failure?': 1 }
+    ];
+    set('updates',up);
+  }
+  if (!mt.length) {
+    mt = [
+      {equipment:'364',task:'Oil Change',interval:'monthly',lastDone:'2025-05-01'},
+      {equipment:'444',task:'Brake Inspection',interval:'weekly',lastDone:'2025-05-20'},
+      {equipment:'217',task:'Service',interval:'weekly',lastDone:'2025-11-08'},
+      {equipment:'155',task:'REPLACE BRAKE SHOES',interval:'weekly',lastDone:'2025-11-07'},
+      {equipment:'158',task:'CHANGE OIL',interval:'weekly',lastDone:'2025-11-07'}
+    ];
+    set('maintenance',mt);
+  }
+  if (!delaysData.length) {
+    delaysData = [
+      { equipment: '364', reason: 'Awaiting Spares', hours: 8, date: '2025-11-04' },
+      { equipment: '217', reason: 'Safety Stand-down', hours: 4, date: '2025-11-05' }
+    ];
+    set('delays', delaysData);
+  }
+
+  document.getElementById('m-last').value = new Date().toISOString().slice(0,10);
+  document.getElementById('u-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('s-date').value = new Date().toISOString().slice(0,10);
+
+  fillDatalist(); populateDashboard(); populateLogTable(); populateSummaryTable();
+  populateEquipmentTable(); populateMaintTable(); show('dashboard');
+</script>
+</body>
+</html>
