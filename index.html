@@ -491,9 +491,7 @@
 
   // ==== NAVIGATION & CALENDAR (unchanged) ====
   // ... (your navigation, show(), initCalendar() unchanged) ...
- // ... your original functions ...
 
-  // ==== NAVIGATION (unchanged) ====
 
   document.querySelectorAll('#sidebar-menu li').forEach(li => {
     li.addEventListener('click', () => show(li.dataset.section));
@@ -675,12 +673,7 @@
       delaysData.push(child.val());
     });
     // Future: use for dynamic delay chart
-  });
-
-  
-    // Use delaysData if needed in charts
-    
-// ==== SEARCH ====
+    // ==== SEARCH ====
   document.getElementById('search-form').onsubmit = e => {
     e.preventDefault();
     const loco = e.target[0].value.trim();
@@ -744,6 +737,20 @@
   }
 
   });  
+
+  });
+
+// ==== INITIAL SETUP (remove get/set calls) ====
+  document.getElementById('m-last').value = new Date().toISOString().slice(0,10);
+  document.getElementById('u-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('s-date').value = new Date().toISOString().slice(0,10);
+
+  fillDatalist();
+  show('dashboard');
+
+  // ... (rest of your functions: populateDashboard, getStatus, fillDatalist, exports, etc. remain unchanged) ...
+
+
 
   // ==== OTHER FUNCTIONS (populateDashboard, fillDatalist, etc.) remain the same ====
   function populateDashboard() {
@@ -1055,16 +1062,12 @@
   // ... copy all your remaining original functions unchanged ...
 
   // ==== INITIAL SETUP ====
-  document.getElementById('m-last').value = new Date().toISOString().slice(0,10);
-  document.getElementById('u-date').value = new Date().toISOString().slice(0,10);
-  document.getElementById('s-date').value = new Date().toISOString().slice(0,10);
 
-  fillDatalist();
-  show('dashboard');
 
 </script>
 </body>
 </html>
+
 
 
 
