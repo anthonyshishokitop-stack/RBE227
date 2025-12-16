@@ -1012,52 +1012,30 @@
 
   // ==== INITIAL LOAD ====
   
- let eq = [], up = [], mt = [], delaysData = [], };
-  
-  if (!eq.length) {
-    eq = [
+ equipmentRef.on('value', snap => {
+  if (snap.val() === null) {
+    // Push fallback data to Firebase (only once)
+    const defaultEq = [
       {Shaft:'1 Shaft',Level:'14 Level','Loco Size':'10t Loco','Loco Number':'364',SECTION:'1245'},
-      {Shaft:'CLAPHAM',Level:'15 Level','Loco Size':'8t Loco','Loco Number':'217',SECTION:'5678'},
-      {Shaft:'North Decline',Level:'20 Level','Loco Size':'12t Loco','Loco Number':'412',SECTION:'8901'},
-      {Shaft:'1 Shaft',Level:'16 Level','Loco Size':'10t Loco','Loco Number':'444',SECTION:'2234'},
-      {Shaft:'1 Shaft',Level:'17 Level','Loco Size':'10t Loco','Loco Number':'155',SECTION:'3345'},
-      {Shaft:'1 Shaft',Level:'18 Level','Loco Size':'10t Loco','Loco Number':'158',SECTION:'4456'},
-      {Shaft:'1 Shaft',Level:'19 Level','Loco Size':'10t Loco','Loco Number':'15',SECTION:'5567'},
-      {Shaft:'1 Shaft',Level:'20 Level','Loco Size':'10t Loco','Loco Number':'270',SECTION:'6678'}
+      // ... add the rest of your fallback array here ...
     ];
-    
+    defaultEq.forEach(item => equipmentRef.push(item));
+  } else {
+    eq = [];
+    snap.forEach(child => {
+      eq.push({ ...child.val(), key: child.key });
+    });
+    fillDatalist();
+    populateDashboard();
+    populateEquipmentTable();
+    populateSummaryTable();
   }
-  if (!up.length) {
-    up = [
-      { Date: '2025-11-05', Time: '07:30', 'Equipment ID': '364', Status: 'Fixed', Shift: 'Morning', 'Reason/Fault': 'Brake pads replaced', 'Downtime Hours': 3.5, 'Is Failure?': 1 },
-      { Date: '2025-11-04', Time: '14:20', 'Equipment ID': '217', Status: 'Down', Shift: 'Afternoon', 'Reason/Fault': 'Hydraulic leak', 'Downtime Hours': 8, 'Is Failure?': 1 },
-      { Date: '2025-11-10', Time: '09:00', 'Equipment ID': '15', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'BRAKES', 'Downtime Hours': 384, 'Is Failure?': 1 },
-      { Date: '2025-11-10', Time: '10:00', 'Equipment ID': '270', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'Not Starting', 'Downtime Hours': 0, 'Is Failure?': 1 },
-      { Date: '2025-11-10', Time: '11:00', 'Equipment ID': '155', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'BRAKES FAILURE', 'Downtime Hours': 0, 'Is Failure?': 1 }
-    ];
-    set('updates',up);
-  }
-  if (!mt.length) {
-    mt = [
-      {equipment:'364',task:'Oil Change',interval:'monthly',lastDone:'2025-05-01'},
-      {equipment:'444',task:'Brake Inspection',interval:'weekly',lastDone:'2025-05-20'},
-      {equipment:'217',task:'Service',interval:'weekly',lastDone:'2025-11-08'},
-      {equipment:'155',task:'REPLACE BRAKE SHOES',interval:'weekly',lastDone:'2025-11-07'},
-      {equipment:'158',task:'CHANGE OIL',interval:'weekly',lastDone:'2025-11-07'}
-    ];
-    set('maintenance',mt);
-  }
-  if (!delaysData.length) {
-    delaysData = [
-      { equipment: '364', reason: 'Awaiting Spares', hours: 8, date: '2025-11-04' },
-      { equipment: '217', reason: 'Safety Stand-down', hours: 4, date: '2025-11-05' }
-    ];
-    set('delays', delaysData);
-  }
+});
 
 </script>
 </body>
 </html>
+
 
 
 
