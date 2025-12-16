@@ -1011,7 +1011,9 @@
   }
 
   // ==== INITIAL LOAD ====
-  eq = get('equipment'); up = get('updates'); mt = get('maintenance'); delaysData = get('delays');
+  
+ let eq = [], up = [], mt = [], delaysData = [], };
+  
   if (!eq.length) {
     eq = [
       {Shaft:'1 Shaft',Level:'14 Level','Loco Size':'10t Loco','Loco Number':'364',SECTION:'1245'},
@@ -1023,7 +1025,7 @@
       {Shaft:'1 Shaft',Level:'19 Level','Loco Size':'10t Loco','Loco Number':'15',SECTION:'5567'},
       {Shaft:'1 Shaft',Level:'20 Level','Loco Size':'10t Loco','Loco Number':'270',SECTION:'6678'}
     ];
-    set('equipment',eq);
+    
   }
   if (!up.length) {
     up = [
@@ -1053,12 +1055,10 @@
     set('delays', delaysData);
   }
 
-  // ... copy all your remaining original functions unchanged ...
-  // ==== INITIAL SETUP ====
-
 </script>
 </body>
 </html>
+
 
 
 
