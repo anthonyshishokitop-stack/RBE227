@@ -417,8 +417,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 
 <script>
+  
   // ==== FIREBASE CONFIGURATION ====
   // REPLACE THIS ENTIRE OBJECT WITH YOUR ACTUAL CONFIG FROM FIREBASE CONSOLE
+
   const firebaseConfig = {
     apiKey: "AIzaSyDlbzmgZykYM9uHoGFW8jFKZxxs1mAaMJM",
     authDomain: "rbemine-972a8.firebaseapp.com",
@@ -429,27 +431,22 @@
     measurementId: "G-17TT2XN7T3"
   };
 
-  // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  // References to data nodes (shared across all users)
   const equipmentRef = db.ref('equipment');
   const updatesRef = db.ref('updates');
   const maintenanceRef = db.ref('maintenance');
   const delaysRef = db.ref('delays');
 
-  // Make refs global for use in functions
   window.equipmentRef = equipmentRef;
   window.updatesRef = updatesRef;
   window.maintenanceRef = maintenanceRef;
   window.delaysRef = delaysRef;
 
-  // ==== GLOBAL DATA (will be populated from Firebase) ====
   let eq = [], up = [], mt = [], delaysData = [], calendar = null, charts = {};
 
-  // ==== FULL SHAFTS LIST (unchanged) ====
-  const shafts = [    '0 Shaft', '1 Shaft', '2 Shaft', '3 Shaft', '4 Shaft', '5 Shaft', '6 Shaft', '7 Shaft',
+  const shafts = [ '0 Shaft', '1 Shaft', '2 Shaft', '3 Shaft', '4 Shaft', '5 Shaft', '6 Shaft', '7 Shaft',
     '7A Shaft', '8 Shaft', '9 Shaft', '10 Shaft', '10D', '11 Shaft', '11C Shaft', '11D',
     '12 Shaft', '12 North Shaft', '12S', '14 Shaft', '14D', '16 Shaft', '17 Shaft',
     '20 Shaft', 'CLAPHAM', 'DRIKOP', 'E&F Shaft', 'NORTH SHAFT', 'SOUTH SHAFT',
@@ -457,30 +454,24 @@
     'UG2 Main Decline', 'Merensky Main Decline', 'UG2 North Decline',
     '367-KT (Kalkfontein)', '368-KT (Buffelshoek)', '370-KT (Richmond)',
     '372-KT (Dwarsrivier)', '373-KT (De Grooteboom)', '374-KT (Tweefontein)',
-    'Leeuwkop Shaft'];
+    'Leeuwkop Shaft' ];
 
-  // ==== THEME (unchanged) ====
-
+  // ==== THEME TOGGLE ====
   window.addEventListener('load', () => {
     const saved = localStorage.getItem('theme') || 'dark';
     document.body.setAttribute('data-theme', saved);
-    document.querySelector('.theme-toggle').textContent = saved === 'dark' ? 'Dark Mode' : 'Light Mode';
+    document.querySelector('.theme-toggle').textContent = saved === 'dark' ? '🌙 Dark' : '☀️ Light';
   });
-
-  
-  // ... your original theme code ...
 
   function toggleTheme() {
     const cur = document.body.getAttribute('data-theme');
     const newTheme = cur === 'dark' ? 'light' : 'dark';
     document.body.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
-    document.querySelector('.theme-toggle').textContent = newTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
+    document.querySelector('.theme-toggle').textContent = newTheme === 'dark' ? '🌙 Dark' : '☀️ Light';
   }
-  
 
   // ==== DATE CALCULATIONS (unchanged) ====
-
   function calculateNextDue(lastDone, interval) {
     if (!lastDone) return '';
     const d = new Date(lastDone);
@@ -489,6 +480,7 @@
     else if (interval === 'quarterly') d.setMonth(d.getMonth() + 3);
     return d.toISOString().slice(0,10);
   }
+
   function calculateDaysLeft(lastDone, interval) {
     if (!lastDone) return NaN;
     const next = new Date(calculateNextDue(lastDone, interval));
@@ -497,10 +489,9 @@
     return Math.ceil((next - today) / 86400000);
   }
 
-  
-  // ... your original functions ...
+  // ==== NAVIGATION & CALENDAR (unchanged) ====
+  // ... (your navigation, show(), initCalendar() unchanged) ...
 
-  // ==== NAVIGATION (unchanged) ====
 
   document.querySelectorAll('#sidebar-menu li').forEach(li => {
     li.addEventListener('click', () => show(li.dataset.section));
@@ -541,11 +532,10 @@
 
   // ... your original calendar code ...
 
-  // ==== MAINTENANCE TABLE (updated to use mt from Firebase) ====
-
+  // ==== MAINTENANCE TABLE ====
   function populateMaintTable() {
     const tbody = document.querySelector('#maint-table tbody');
-    tbody.innerHTML = mt.map((m,i) => {
+    tbody.innerHTML = mt.map((m, i) => {
       const next = calculateNextDue(m.lastDone, m.interval);
       const days = calculateDaysLeft(m.lastDone, m.interval);
       const display = isNaN(days) ? '-' : (days >= 0 ? `${days} days` : `${Math.abs(days)} days overdue`);
@@ -554,47 +544,46 @@
         <td>${m.equipment}</td><td>${m.task}</td><td>${m.interval}</td><td>${m.lastDone}</td>
         <td>${next}</td><td style="color:${color};font-weight:700;">${display}</td>
         <td class="maint-actions">
-          <button class="done-btn" onclick="markDone(${i})">Done</button>
-          <button class="edit-btn" onclick="openEditModal(${i})">Edit</button>
-          <button class="delete-btn" onclick="deleteMaint(${i})">Delete</button>
+          <button class="done-btn" onclick="markDone('${m.key}')">Done</button>
+          <button class="edit-btn" onclick="openEditModal('${m.key}', ${i})">Edit</button>
+          <button class="delete-btn" onclick="deleteMaint('${m.key}')">Delete</button>
         </td>
       </tr>`;
     }).join('');
   }
-  function markDone(idx) {
+
+  function markDone(key) {
     const today = new Date().toISOString().slice(0,10);
-    mt[idx].lastDone = today;
-    set('maintenance', mt);
-    populateMaintTable(); populateDashboard();
-    if (!document.getElementById('calendar').classList.contains('hidden')) initCalendar();
+    maintenanceRef.child(key).update({ lastDone: today });
   }
-  function deleteMaint(idx) {
-    if (confirm('Delete this task?')) {
-      mt.splice(idx,1); set('maintenance', mt);
-      populateMaintTable(); populateDashboard();
-      if (!document.getElementById('calendar').classList.contains('hidden')) initCalendar();
+
+  function deleteMaint(key) {
+    if (confirm('Delete this task?')) { //Fixed paranthesis 
+      maintenanceRef.child(key).remove();
     }
   }
-  function openEditModal(idx) {
-    const m = mt[idx];
-    document.getElementById('edit-index').value = idx;
+
+  function openEditModal(key) {  
+    // idxForHighlight only for UI if needed
+    const m = maintenanceTasks.find(task => task.key === key);
+    if (!m) return;
+    document.getElementById('edit-index').value = key;  // Now stores Firebase key
     document.getElementById('edit-equipment').value = m.equipment;
     document.getElementById('edit-task').value = m.task;
     document.getElementById('edit-interval').value = m.interval;
     document.getElementById('edit-last').value = m.lastDone;
     document.getElementById('edit-modal').classList.add('active');
   }
+
   function closeEditModal() { document.getElementById('edit-modal').classList.remove('active'); }
   function closeAddMaintModal() { document.getElementById('add-maint-modal').classList.remove('active'); }
-  
-  // ... your original populateMaintTable, markDone, deleteMaint, openEditModal, etc. ...
 
-  // ==== FORMS (updated to push to Firebase) ====
+  // ==== FORMS ====
   document.getElementById('add-maint-form').onsubmit = e => {
     e.preventDefault();
     const newTask = {
-      equipment: e.target[0].value,
-      task: e.target[1].value,
+      equipment: e.target[0].value.trim(),
+      task: e.target[1].value.trim(),
       interval: e.target[2].value,
       lastDone: e.target[3].value
     };
@@ -605,16 +594,18 @@
 
   document.getElementById('edit-maint-form').onsubmit = e => {
     e.preventDefault();
-    const key = document.getElementById('edit-index').value;
+    const key = document.getElementById('edit-index').value;  // Firebase key
     const updatedTask = {
-      equipment: e.target[0].value,
-      task: e.target[1].value,
+      equipment: e.target[0].value.trim(),
+      task: e.target[1].value.trim(),
       interval: e.target[2].value,
       lastDone: e.target[3].value
     };
     maintenanceRef.child(key).update(updatedTask);
     closeEditModal();
   };
+
+  // ... (other forms: add-eq-form, add-status-form unchanged) ...
 
   document.getElementById('add-eq-form').onsubmit = e => {
     e.preventDefault();
@@ -645,7 +636,7 @@
     e.target.reset();
   };
 
-  // ==== REAL-TIME LISTENERS (replace localStorage loads) ====
+  // ==== REAL-TIME LISTENERS (now store key in objects) ====
   equipmentRef.on('value', snap => {
     eq = [];
     snap.forEach(child => {
@@ -682,9 +673,8 @@
     snap.forEach(child => {
       delaysData.push(child.val());
     });
-    // Use delaysData if needed in charts
-    
-// ==== SEARCH ====
+    // Future: use for dynamic delay chart
+    // ==== SEARCH ====
   document.getElementById('search-form').onsubmit = e => {
     e.preventDefault();
     const loco = e.target[0].value.trim();
@@ -746,11 +736,18 @@
     const addShaft = document.getElementById('shaft');
     addShaft.innerHTML = '<option value="">Select Shaft</option>' + shafts.map(s=>`<option>${s}</option>`).join('');
   }
-    
 
-    
   });
 
+// ==== INITIAL SETUP (remove get/set calls) ====
+  document.getElementById('m-last').value = new Date().toISOString().slice(0,10);
+  document.getElementById('u-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('s-date').value = new Date().toISOString().slice(0,10);
+
+  fillDatalist();
+  show('dashboard');
+
+  // ... (rest of your functions: populateDashboard, getStatus, fillDatalist, exports, etc. remain unchanged) ...
   // ==== OTHER FUNCTIONS (populateDashboard, fillDatalist, etc.) remain the same ====
   function populateDashboard() {
     const shaft = document.getElementById('shaft-filter').value;
@@ -1015,59 +1012,35 @@
   }
 
   // ==== INITIAL LOAD ====
-
-  eq = get('equipment'); up = get('updates'); mt = get('maintenance'); delaysData = get('delays');
-  if (!eq.length) {
-    eq = [
-      {Shaft:'1 Shaft',Level:'14 Level','Loco Size':'10t Loco','Loco Number':'364',SECTION:'1245'},
-      {Shaft:'CLAPHAM',Level:'15 Level','Loco Size':'8t Loco','Loco Number':'217',SECTION:'5678'},
-      {Shaft:'North Decline',Level:'20 Level','Loco Size':'12t Loco','Loco Number':'412',SECTION:'8901'},
-      {Shaft:'1 Shaft',Level:'16 Level','Loco Size':'10t Loco','Loco Number':'444',SECTION:'2234'},
-      {Shaft:'1 Shaft',Level:'17 Level','Loco Size':'10t Loco','Loco Number':'155',SECTION:'3345'},
-      {Shaft:'1 Shaft',Level:'18 Level','Loco Size':'10t Loco','Loco Number':'158',SECTION:'4456'},
-      {Shaft:'1 Shaft',Level:'19 Level','Loco Size':'10t Loco','Loco Number':'15',SECTION:'5567'},
-      {Shaft:'1 Shaft',Level:'20 Level','Loco Size':'10t Loco','Loco Number':'270',SECTION:'6678'}
-    ];
-    set('equipment',eq);
-  }
-  if (!up.length) {
-    up = [
-      { Date: '2025-11-05', Time: '07:30', 'Equipment ID': '364', Status: 'Fixed', Shift: 'Morning', 'Reason/Fault': 'Brake pads replaced', 'Downtime Hours': 3.5, 'Is Failure?': 1 },
-      { Date: '2025-11-04', Time: '14:20', 'Equipment ID': '217', Status: 'Down', Shift: 'Afternoon', 'Reason/Fault': 'Hydraulic leak', 'Downtime Hours': 8, 'Is Failure?': 1 },
-      { Date: '2025-11-10', Time: '09:00', 'Equipment ID': '15', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'BRAKES', 'Downtime Hours': 384, 'Is Failure?': 1 },
-      { Date: '2025-11-10', Time: '10:00', 'Equipment ID': '270', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'Not Starting', 'Downtime Hours': 0, 'Is Failure?': 1 },
-      { Date: '2025-11-10', Time: '11:00', 'Equipment ID': '155', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'BRAKES FAILURE', 'Downtime Hours': 0, 'Is Failure?': 1 }
-    ];
-    set('updates',up);
-  }
-  if (!mt.length) {
-    mt = [
-      {equipment:'364',task:'Oil Change',interval:'monthly',lastDone:'2025-05-01'},
-      {equipment:'444',task:'Brake Inspection',interval:'weekly',lastDone:'2025-05-20'},
-      {equipment:'217',task:'Service',interval:'weekly',lastDone:'2025-11-08'},
-      {equipment:'155',task:'REPLACE BRAKE SHOES',interval:'weekly',lastDone:'2025-11-07'},
-      {equipment:'158',task:'CHANGE OIL',interval:'weekly',lastDone:'2025-11-07'}
-    ];
-    set('maintenance',mt);
-  }
-  if (!delaysData.length) {
-    delaysData = [
-      { equipment: '364', reason: 'Awaiting Spares', hours: 8, date: '2025-11-04' },
-      { equipment: '217', reason: 'Safety Stand-down', hours: 4, date: '2025-11-05' }
-    ];
-    set('delays', delaysData);
-  }
   
-  // ... copy all your remaining original functions unchanged ...
-
-  // ==== INITIAL SETUP ====
-  document.getElementById('m-last').value = new Date().toISOString().slice(0,10);
-  document.getElementById('u-date').value = new Date().toISOString().slice(0,10);
-  document.getElementById('s-date').value = new Date().toISOString().slice(0,10);
-
-  fillDatalist();
-  show('dashboard');
+ equipmentRef.on('value', snap => {
+  if (snap.val() === null) {
+    // Push fallback data to Firebase (only once)
+    const defaultEq = [
+      {Shaft:'1 Shaft',Level:'14 Level','Loco Size':'10t Loco','Loco Number':'364',SECTION:'1245'},
+      // ... add the rest of your fallback array here ...
+    ];
+    defaultEq.forEach(item => equipmentRef.push(item));
+  } else {
+    eq = [];
+    snap.forEach(child => {
+      eq.push({ ...child.val(), key: child.key });
+    });
+    fillDatalist();
+    populateDashboard();
+    populateEquipmentTable();
+    populateSummaryTable();
+  }
+});
 
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
