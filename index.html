@@ -736,8 +736,6 @@
     addShaft.innerHTML = '<option value="">Select Shaft</option>' + shafts.map(s=>`<option>${s}</option>`).join('');
   }
 
-  });  
-
   });
 
 // ==== INITIAL SETUP (remove get/set calls) ====
@@ -749,9 +747,6 @@
   show('dashboard');
 
   // ... (rest of your functions: populateDashboard, getStatus, fillDatalist, exports, etc. remain unchanged) ...
-
-
-
   // ==== OTHER FUNCTIONS (populateDashboard, fillDatalist, etc.) remain the same ====
   function populateDashboard() {
     const shaft = document.getElementById('shaft-filter').value;
@@ -1058,15 +1053,13 @@
     set('delays', delaysData);
   }
 
-  
   // ... copy all your remaining original functions unchanged ...
-
   // ==== INITIAL SETUP ====
-
 
 </script>
 </body>
 </html>
+
 
 
 
