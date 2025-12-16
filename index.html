@@ -167,6 +167,7 @@
         #sidebar-menu li.active {
             background: var(--prim-light);
             font-weight: 700;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
         }
 
         .main {
@@ -947,6 +948,32 @@
             "373-KT De Grooteboom", "374-KT Tweefontein", "Leeuwkop Shaft"
         ];
 
+        // ========== INITIALIZE SIDEBAR NAVIGATION ON DOM READY ==========
+        document.addEventListener("DOMContentLoaded", function() {
+            console.log("DOM Loaded - Initializing navigation...");
+            
+            // Attach click listeners to all sidebar menu items
+            const sidebarItems = document.querySelectorAll("#sidebar-menu li");
+            console.log("Found " + sidebarItems.length + " sidebar items");
+            
+            sidebarItems.forEach(li => {
+                li.addEventListener("click", function(e) {
+                    e.preventDefault();
+                    const section = this.getAttribute("data-section");
+                    console.log("Clicked section: " + section);
+                    show(section);
+                });
+            });
+
+            // Initialize default values
+            document.getElementById("m-last").value = new Date().toISOString().slice(0, 10);
+            document.getElementById("u-date").value = new Date().toISOString().slice(0, 10);
+            document.getElementById("s-date").value = new Date().toISOString().slice(0, 10);
+
+            fillDatalist();
+            show("dashboard");
+        });
+
         // THEME TOGGLE
         function toggleTheme() {
             const cur = document.body.getAttribute("data-theme") || "dark";
@@ -959,6 +986,46 @@
             const saved = localStorage.getItem("theme") || "dark";
             document.body.setAttribute("data-theme", saved);
         });
+
+        // ========== SHOW/HIDE SECTIONS ==========
+        function show(section) {
+            console.log("Showing section: " + section);
+            
+            // Hide all sections
+            document.querySelectorAll("section").forEach(s => {
+                s.classList.add("hidden");
+            });
+            
+            // Show selected section
+            const el = document.getElementById(section);
+            if (el) {
+                el.classList.remove("hidden");
+                console.log("Section displayed: " + section);
+            } else {
+                console.error("Section not found: " + section);
+            }
+            
+            // Update active menu item
+            document.querySelectorAll("#sidebar-menu li").forEach(l => {
+                l.classList.remove("active");
+            });
+            const activeLi = document.querySelector(`#sidebar-menu li[data-section="${section}"]`);
+            if (activeLi) {
+                activeLi.classList.add("active");
+                console.log("Menu item activated: " + section);
+            }
+
+            // Call section-specific initialization
+            if (section === "calendar") {
+                setTimeout(initCalendar, 100);
+            }
+            if (section === "maintenance-schedule") {
+                populateMaintTable();
+            }
+            if (section === "operations-report") {
+                populateOperationsReport();
+            }
+        }
 
         // DATE CALCULATIONS
         function calculateNextDue(lastDone, interval) {
@@ -977,24 +1044,6 @@
             today.setHours(0, 0, 0, 0);
             next.setHours(0, 0, 0, 0);
             return Math.ceil((next - today) / 86400000);
-        }
-
-        // NAVIGATION
-        document.querySelectorAll("#sidebar-menu li").forEach(li => {
-            li.addEventListener("click", () => show(li.dataset.section));
-        });
-
-        function show(section) {
-            document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
-            const el = document.getElementById(section);
-            if (el) el.classList.remove("hidden");
-            document.querySelectorAll("#sidebar-menu li").forEach(l => l.classList.remove("active"));
-            const activeLi = document.querySelector(`#sidebar-menu li[data-section="${section}"]`);
-            if (activeLi) activeLi.classList.add("active");
-
-            if (section === "calendar") setTimeout(initCalendar, 0);
-            if (section === "maintenance-schedule") populateMaintTable();
-            if (section === "operations-report") populateOperationsReport();
         }
 
         // CALENDAR
@@ -1079,60 +1128,111 @@
         }
 
         // FORMS
-        document.getElementById("add-maint-form").onsubmit = (e) => {
-            e.preventDefault();
-            const newTask = {
-                equipment: e.target[0].value.trim(),
-                task: e.target[1].value.trim(),
-                interval: e.target[2].value,
-                lastDone: e.target[3].value
-            };
-            maintenanceRef.push(newTask);
-            closeAddMaintModal();
-            e.target.reset();
-        };
+        document.addEventListener("DOMContentLoaded", function() {
+            const addMaintForm = document.getElementById("add-maint-form");
+            if (addMaintForm) {
+                addMaintForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const newTask = {
+                        equipment: e.target[0].value.trim(),
+                        task: e.target[1].value.trim(),
+                        interval: e.target[2].value,
+                        lastDone: e.target[3].value
+                    };
+                    maintenanceRef.push(newTask);
+                    closeAddMaintModal();
+                    e.target.reset();
+                });
+            }
 
-        document.getElementById("edit-maint-form").onsubmit = (e) => {
-            e.preventDefault();
-            const key = document.getElementById("edit-index").value;
-            const updatedTask = {
-                equipment: e.target[0].value.trim(),
-                task: e.target[1].value.trim(),
-                interval: e.target[2].value,
-                lastDone: e.target[3].value
-            };
-            maintenanceRef.child(key).update(updatedTask);
-            closeEditModal();
-        };
+            const editMaintForm = document.getElementById("edit-maint-form");
+            if (editMaintForm) {
+                editMaintForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const key = document.getElementById("edit-index").value;
+                    const updatedTask = {
+                        equipment: e.target[0].value.trim(),
+                        task: e.target[1].value.trim(),
+                        interval: e.target[2].value,
+                        lastDone: e.target[3].value
+                    };
+                    maintenanceRef.child(key).update(updatedTask);
+                    closeEditModal();
+                });
+            }
 
-        document.getElementById("add-eq-form").onsubmit = (e) => {
-            e.preventDefault();
-            const newEq = {
-                Shaft: e.target[0].value,
-                Level: e.target[1].value,
-                "Loco Size": e.target[2].value,
-                "Loco Number": e.target[3].value,
-                SECTION: e.target[4].value
-            };
-            equipmentRef.push(newEq);
-            e.target.reset();
-        };
+            const addEqForm = document.getElementById("add-eq-form");
+            if (addEqForm) {
+                addEqForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const newEq = {
+                        Shaft: e.target[0].value,
+                        Level: e.target[1].value,
+                        "Loco Size": e.target[2].value,
+                        "Loco Number": e.target[3].value,
+                        SECTION: e.target[4].value
+                    };
+                    equipmentRef.push(newEq);
+                    e.target.reset();
+                });
+            }
 
-        document.getElementById("add-status-form").onsubmit = (e) => {
-            e.preventDefault();
-            const newUpdate = {
-                Date: e.target[0].value,
-                Time: e.target[1].value,
-                "Equipment ID": e.target[2].value,
-                Status: e.target[3].value,
-                Shift: e.target[4].value,
-                ReasonFault: e.target[5].value,
-                "Downtime Hours": parseFloat(e.target[6].value) || 0,
-                "Is Failure?": parseInt(e.target[7].value)
-            };
-            updatesRef.push(newUpdate);
-            e.target.reset();
-        };
+            const addStatusForm = document.getElementById("add-status-form");
+            if (addStatusForm) {
+                addStatusForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const newUpdate = {
+                        Date: e.target[0].value,
+                        Time: e.target[1].value,
+                        "Equipment ID": e.target[2].value,
+                        Status: e.target[3].value,
+                        Shift: e.target[4].value,
+                        ReasonFault: e.target[5].value,
+                        "Downtime Hours": parseFloat(e.target[6].value) || 0,
+                        "Is Failure?": parseInt(e.target[7].value)
+                    };
+                    updatesRef.push(newUpdate);
+                    e.target.reset();
+                });
+            }
+
+            const searchForm = document.getElementById("search-form");
+            if (searchForm) {
+                searchForm.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    const loco = e.target[0].value.trim();
+                    const date = e.target[1].value;
+                    const showAll = e.target[2].checked;
+                    const resultsDiv = document.getElementById("search-results");
+                    resultsDiv.innerHTML = "";
+
+                    const equipment = eq.find(e => e["Loco Number"] === loco);
+                    if (!equipment) {
+                        resultsDiv.innerHTML = "<p style='color: #e74c3c; font-weight: 700;'>Equipment not found.</p>";
+                        return;
+                    }
+
+                    const header = `<div style="background: rgba(13, 71, 161, 0.15); padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
+                        <strong>Equipment:</strong> ${equipment["Loco Number"]} - ${equipment.Shaft}<br>
+                        <strong>Level:</strong> ${equipment.Level} | <strong>Size:</strong> ${equipment["Loco Size"]} | <strong>Section:</strong> ${equipment.SECTION}
+                    </div>`;
+
+                    let updates = up.filter(u => u["Equipment ID"] === loco);
+                    if (date && !showAll) {
+                        updates = updates.filter(u => u.Date === date);
+                    }
+                    updates.sort((a, b) => new Date(b.Date + " " + b.Time) - new Date(a.Date + " " + a.Time));
+
+                    const updatesHTML = updates.length ? updates.map(u => `<div style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,.12);">
+                        <strong>${u.Date} ${u.Time}</strong> | <span style="color: ${u.Status === "Fixed" ? "#2ecc71" : "#e74c3c};">${u.Status}</span><br>
+                        ${u.ReasonFault} ${u["Downtime Hours"] ? `- ${u["Downtime Hours"]}h downtime` : ""}
+                        ${u["Is Failure?"] === 1 ? '<span class="risk-badge risk-high" style="margin-left: 8px;">FAILURE</span>' : ""}
+                    </div>`).join("") : "<p style='color: #f39c12;'>No updates found.</p>";
+
+                    resultsDiv.innerHTML = header + updatesHTML;
+                });
+            }
+        });
 
         // REAL-TIME LISTENERS
         equipmentRef.on("value", (snap) => {
@@ -1168,41 +1268,6 @@
             }
         });
 
-        // SEARCH
-        document.getElementById("search-form").onsubmit = (e) => {
-            e.preventDefault();
-            const loco = e.target[0].value.trim();
-            const date = e.target[1].value;
-            const showAll = e.target[2].checked;
-            const resultsDiv = document.getElementById("search-results");
-            resultsDiv.innerHTML = "";
-
-            const equipment = eq.find(e => e["Loco Number"] === loco);
-            if (!equipment) {
-                resultsDiv.innerHTML = "<p style='color: #e74c3c; font-weight: 700;'>Equipment not found.</p>";
-                return;
-            }
-
-            const header = `<div style="background: rgba(13, 71, 161, 0.15); padding: 1rem; border-radius: 12px; margin-bottom: 1rem;">
-                <strong>Equipment:</strong> ${equipment["Loco Number"]} - ${equipment.Shaft}<br>
-                <strong>Level:</strong> ${equipment.Level} | <strong>Size:</strong> ${equipment["Loco Size"]} | <strong>Section:</strong> ${equipment.SECTION}
-            </div>`;
-
-            let updates = up.filter(u => u["Equipment ID"] === loco);
-            if (date && !showAll) {
-                updates = updates.filter(u => u.Date === date);
-            }
-            updates.sort((a, b) => new Date(b.Date + " " + b.Time) - new Date(a.Date + " " + a.Time));
-
-            const updatesHTML = updates.length ? updates.map(u => `<div style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,.12);">
-                <strong>${u.Date} ${u.Time}</strong> | <span style="color: ${u.Status === "Fixed" ? "#2ecc71" : "#e74c3c};">${u.Status}</span><br>
-                ${u.ReasonFault} ${u["Downtime Hours"] ? `- ${u["Downtime Hours"]}h downtime` : ""}
-                ${u["Is Failure?"] === 1 ? '<span class="risk-badge risk-high" style="margin-left: 8px;">FAILURE</span>' : ""}
-            </div>`).join("") : "<p style='color: #f39c12;'>No updates found.</p>";
-
-            resultsDiv.innerHTML = header + updatesHTML;
-        };
-
         // DASHBOARD HELPERS
         function getStatus(id) {
             const updates = up.filter(u => u["Equipment ID"] === id);
@@ -1224,14 +1289,6 @@
             const addShaft = document.getElementById("shaft");
             addShaft.innerHTML = `<option value="">Select Shaft</option>` + shafts.map(s => `<option value="${s}">${s}</option>`).join("");
         }
-
-        // INITIAL SETUP
-        document.getElementById("m-last").value = new Date().toISOString().slice(0, 10);
-        document.getElementById("u-date").value = new Date().toISOString().slice(0, 10);
-        document.getElementById("s-date").value = new Date().toISOString().slice(0, 10);
-
-        fillDatalist();
-        show("dashboard");
 
         // POPULATE FUNCTIONS
         function populateDashboard() {
