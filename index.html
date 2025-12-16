@@ -446,7 +446,7 @@
 
   let eq = [], up = [], mt = [], delaysData = [], calendar = null, charts = {};
 
-  const shafts = [     '0 Shaft', '1 Shaft', '2 Shaft', '3 Shaft', '4 Shaft', '5 Shaft', '6 Shaft', '7 Shaft',
+  const shafts = [ '0 Shaft', '1 Shaft', '2 Shaft', '3 Shaft', '4 Shaft', '5 Shaft', '6 Shaft', '7 Shaft',
     '7A Shaft', '8 Shaft', '9 Shaft', '10 Shaft', '10D', '11 Shaft', '11C Shaft', '11D',
     '12 Shaft', '12 North Shaft', '12S', '14 Shaft', '14D', '16 Shaft', '17 Shaft',
     '20 Shaft', 'CLAPHAM', 'DRIKOP', 'E&F Shaft', 'NORTH SHAFT', 'SOUTH SHAFT',
@@ -558,13 +558,14 @@
   }
 
   function deleteMaint(key) {
-    if (confirm('Delete this task?')) {
+    if (confirm('Delete this task?')) { //Fixed paranthesis 
       maintenanceRef.child(key).remove();
     }
   }
 
-  function openEditModal(key, idxForHighlight) {  // idxForHighlight only for UI if needed
-    const m = mt.find(task => task.key === key);
+  function openEditModal(key) {  
+    // idxForHighlight only for UI if needed
+    const m = maintenanceTasks.find(task => task.key === key);
     if (!m) return;
     document.getElementById('edit-index').value = key;  // Now stores Firebase key
     document.getElementById('edit-equipment').value = m.equipment;
@@ -1035,6 +1036,7 @@
 </script>
 </body>
 </html>
+
 
 
 
