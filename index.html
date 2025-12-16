@@ -747,6 +747,8 @@
     addShaft.innerHTML = '<option value="">Select Shaft</option>' + shafts.map(s=>`<option>${s}</option>`).join('');
   }
 
+  });  
+
   // ==== OTHER FUNCTIONS (populateDashboard, fillDatalist, etc.) remain the same ====
   function populateDashboard() {
     const shaft = document.getElementById('shaft-filter').value;
@@ -1067,4 +1069,5 @@
 </script>
 </body>
 </html>
+
 
