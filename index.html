@@ -13,22 +13,29 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
 
+
+
   <style>
-    /* Your original styles unchanged */
-    :root{--bg:#0a0e17; --card:#1a2332; --txt:#e2e8f0; --border:#334155; --hdr:#1e293b;
+    :root{
+      --bg:#0a0e17; --card:#1a2332; --txt:#e2e8f0; --border:#334155; --hdr:#1e293b;
       --prim:#0d47a1; --prim-light:#1976d2; --succ:#2ecc71; --warn:#f39c12;
       --danger:#e74c3c; --maint:#3498db; --high:#e74c3c; --pred:#e67e22;
       --shadow:0 8px 32px rgba(0,0,0,0.5); --radius:16px; --gap:28px; --pad:32px;
-      --accent-gold:#f4c542; --teal:#008080;}
-    [data-theme="light"]{--bg:#f8fafc; --card:#ffffff; --txt:#1e293b; --border:#cbd5e1; --hdr:#f1f5f9;
+      --accent-gold:#f4c542; --teal:#008080;
+    }
+    [data-theme="light"]{
+      --bg:#f8fafc; --card:#ffffff; --txt:#1e293b; --border:#cbd5e1; --hdr:#f1f5f9;
       --prim:#0d47a1; --prim-light:#1976d2; --succ:#2ecc71; --warn:#f39c12;
       --danger:#e74c3c; --maint:#3498db; --high:#e74c3c; --pred:#e67e22;
-      --shadow:0 8px 32px rgba(0,0,0,0.1);}
+      --shadow:0 8px 32px rgba(0,0,0,0.1);
+    }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     html,body{height:100%;font-family:'Roboto',sans-serif;background:var(--bg);color:var(--txt);overflow-x:hidden;}
-    body{background-image:url('https://images.unsplash.com/photo-1565538810648-7f5a2c106b8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80');
+    body{
+      background-image:url('https://images.unsplash.com/photo-1565538810648-7f5a2c106b8f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80');
       background-size:cover;background-position:center;background-attachment:fixed;
-      display:flex;flex-direction:column;}
+      display:flex;flex-direction:column;
+    }
     h1,h2,h3,h4{margin:0 0 .5em;color:var(--prim);font-weight:700;}
     h1{font-size:clamp(1.9rem,4vw,2.5rem);} h2{font-size:1.6rem;}
     .wrapper{display:flex;flex:1;}
@@ -153,7 +160,7 @@
   </div>
 </div>
 
-<div class="live-indicator">LIVE SYNC • REAL-TIME</div>
+<div class="live-indicator">LIVE SYNC • 0.3s</div>
 
 <datalist id="loco-list"></datalist>
 
@@ -164,6 +171,7 @@
     </div>
     <div class="theme-toggle-wrapper">
       <button class="theme-toggle" onclick="toggleTheme()">Dark Mode</button>
+
     </div>
     <ul id="sidebar-menu">
       <li class="active" data-section="dashboard" data-icon="📊"><span>Dashboard</span></li>
@@ -181,15 +189,9 @@
 
   <div class="main">
     <div class="container">
-      <!-- All your sections (dashboard, add-equipment, etc.) remain exactly the same -->
-      <!-- Omitted here for brevity – copy them unchanged from your original file -->
-      <!-- (They are identical to what you provided) -->
 
       <!-- DASHBOARD -->
       <section id="dashboard">
-        <!-- ... your original dashboard HTML ... -->
-      <!-- DASHBOARD -->
-    
         <div class="header-bar">
           <h1>REAL-TIME PLATINUM OPERATIONS</h1>
           <div style="display:flex;gap:14px;align-items:center;">
@@ -234,13 +236,10 @@
           <h3 style="color:var(--maint);margin-bottom:1.4rem;font-size:1.6rem;">Upcoming Maintenance Schedule</h3>
           <div id="maintenance-list"></div>
         </div>
-
       </section>
 
       <!-- ADD EQUIPMENT -->
       <section id="add-equipment" class="hidden">
-        <!-- ... your original add-equipment HTML ... -->
-
 
         <div class="header-bar"><h1>Add New Equipment</h1></div>
 
@@ -252,14 +251,10 @@
           <div class="form-group"><label>SECTION</label><input id="section" type="text" required></div>
           <button type="submit" class="primary">Add Equipment</button>
         </form>
-    
-        
       </section>
 
       <!-- STATUS UPDATE -->
       <section id="add-status" class="hidden">
-        <!-- ... your original add-status HTML ... -->
-        
         <div class="header-bar"><h1>Status Update</h1></div>
         <form id="add-status-form" style="max-width:600px;">
           <div class="form-group"><label>Date</label><input id="u-date" type="date" required></div>
@@ -272,13 +267,10 @@
           <div class="form-group"><label>Is Failure?</label><select id="u-failure"><option value="0">No</option><option value="1">Yes</option></select></div>
           <button type="submit" class="primary">Submit Update</button>
         </form>
-     
       </section>
 
       <!-- SEARCH -->
       <section id="search-status" class="hidden">
-        <!-- ... your original search HTML ... -->
-
         <div class="header-bar"><h1>Search Status</h1></div>
         <form id="search-form" style="display:flex;gap:14px;align-items:end;flex-wrap:wrap;max-width:800px;">
           <div class="form-group"><label>Equipment ID</label><input id="s-loco" list="loco-list"></div>
@@ -292,14 +284,10 @@
           <button type="button" class="maint" onclick="generateJobPDF()">Job Order PDF</button>
         </form>
         <div id="search-results" style="margin-top:1.8rem;"></div>
- 
-
       </section>
 
       <!-- FULL LOG -->
       <section id="status-log" class="hidden">
-        <!-- ... your original log HTML ... -->
-     
         <div class="header-bar">
           <h1>Full Status Log</h1>
           <button class="export primary" onclick="exportLogCSV()">Export Log (CSV)</button>
@@ -308,13 +296,10 @@
           <thead><tr><th>Date</th><th>Time</th><th>ID</th><th>Status</th><th>Shift</th><th>Fault</th><th>Down Hrs</th><th>Failure</th></tr></thead>
           <tbody></tbody>
         </table>
-        
       </section>
 
       <!-- ANALYTICS -->
       <section id="summary" class="hidden">
-        <!-- ... your original summary HTML ... -->
-
         <div class="header-bar">
           <h1>Fleet Analytics</h1>
           <button class="export primary" onclick="exportDashboardPDF()">Export Analytics Report</button>
@@ -323,26 +308,19 @@
           <thead><tr><th>ID</th><th>Updates</th><th>Total Days</th><th>Down Days</th><th>Op Days</th><th>Failures</th><th>MTTF</th><th>Avail %</th><th>Last Update</th><th>Status</th></tr></thead>
           <tbody></tbody>
         </table>
-        
       </section>
 
       <!-- EQUIPMENT LIST -->
       <section id="manage-equipment" class="hidden">
-        <!-- ... your original equipment list HTML ... -->
-     
         <div class="header-bar"><h1>Equipment List</h1></div>
         <table id="equipment-table">
           <thead><tr><th>Shaft</th><th>Level</th><th>Size</th><th>Loco Number</th><th>SECTION</th></tr></thead>
           <tbody></tbody>
         </table>
-  
-
       </section>
 
       <!-- MAINTENANCE SCHEDULE -->
       <section id="maintenance-schedule" class="hidden">
-        <!-- ... your original maintenance HTML ... -->
-     
         <div class="header-bar">
           <h1>Maintenance Schedule</h1>
           <div>
@@ -359,25 +337,19 @@
           </thead>
           <tbody></tbody>
         </table>
-        
       </section>
 
       <!-- CALENDAR -->
       <section id="calendar" class="hidden">
-        <!-- ... your original calendar HTML ... -->
-
-
         <div class="header-bar"><h1>Maintenance Calendar</h1></div>
         <div id="calendar-div"></div>
-  
-        
       </section>
 
       <!-- OPERATIONS REPORT -->
       <section id="operations-report" class="hidden">
-        <!-- ... your original operations report HTML ... -->
-
         <div class="header-bar">
+
+
           <h1>All Operations Report</h1>
           <button class="export primary" onclick="exportOperationsReportPDF()">Export Report (PDF)</button>
         </div>
@@ -400,53 +372,25 @@
         <div style="background:var(--card);padding:2rem;border-radius:var(--radius);box-shadow:var(--shadow);margin:1.8rem 0;">
           <h2 style="color:var(--teal);margin-bottom:1rem;">Focus Areas: High Risk Equipment</h2>
           <table style="width:100%;">
+
+
             <thead><tr><th>Equipment ID</th><th>Number of Failures</th><th>MTTF (Days)</th><th>Availability %</th></tr></thead>
             <tbody id="high-risk-tbody"></tbody>
           </table>
         </div>
-
-        
       </section>
 
     </div>
   </div>
 </div>
 
-<!-- Firebase SDK (compat version) -->
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-
 <script>
-  
-  // ==== FIREBASE CONFIGURATION ====
-  // REPLACE THIS ENTIRE OBJECT WITH YOUR ACTUAL CONFIG FROM FIREBASE CONSOLE
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDlbzmgZykYM9uHoGFW8jFKZxxs1mAaMJM",
-    authDomain: "rbemine-972a8.firebaseapp.com",
-    projectId: "rbemine-972a8",
-    storageBucket: "rbemine-972a8.firebasestorage.app",
-    messagingSenderId: "188009589982",
-    appId: "1:188009589982:web:61114e6ea73fd22ccc664f",
-    measurementId: "G-17TT2XN7T3"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  const equipmentRef = db.ref('equipment');
-  const updatesRef = db.ref('updates');
-  const maintenanceRef = db.ref('maintenance');
-  const delaysRef = db.ref('delays');
-
-  window.equipmentRef = equipmentRef;
-  window.updatesRef = updatesRef;
-  window.maintenanceRef = maintenanceRef;
-  window.delaysRef = delaysRef;
-
+  // ==== GLOBAL DATA ====
   let eq = [], up = [], mt = [], delaysData = [], calendar = null, charts = {};
 
-  const shafts = [ '0 Shaft', '1 Shaft', '2 Shaft', '3 Shaft', '4 Shaft', '5 Shaft', '6 Shaft', '7 Shaft',
+  // ==== FULL SHAFTS LIST ====
+  const shafts = [
+    '0 Shaft', '1 Shaft', '2 Shaft', '3 Shaft', '4 Shaft', '5 Shaft', '6 Shaft', '7 Shaft',
     '7A Shaft', '8 Shaft', '9 Shaft', '10 Shaft', '10D', '11 Shaft', '11C Shaft', '11D',
     '12 Shaft', '12 North Shaft', '12S', '14 Shaft', '14D', '16 Shaft', '17 Shaft',
     '20 Shaft', 'CLAPHAM', 'DRIKOP', 'E&F Shaft', 'NORTH SHAFT', 'SOUTH SHAFT',
@@ -454,14 +398,18 @@
     'UG2 Main Decline', 'Merensky Main Decline', 'UG2 North Decline',
     '367-KT (Kalkfontein)', '368-KT (Buffelshoek)', '370-KT (Richmond)',
     '372-KT (Dwarsrivier)', '373-KT (De Grooteboom)', '374-KT (Tweefontein)',
-    'Leeuwkop Shaft' ];
+    'Leeuwkop Shaft'
+  ];
 
+  // ==== LOCAL STORAGE HELPERS ====
+  function get(key) { return JSON.parse(localStorage.getItem(key)) || []; }
+  function set(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
 
-  // ==== THEME TOGGLE ====
+  // ==== THEME ====
   window.addEventListener('load', () => {
     const saved = localStorage.getItem('theme') || 'dark';
     document.body.setAttribute('data-theme', saved);
-    document.querySelector('.theme-toggle').textContent = saved === 'dark' ? '🌙 Dark' : '☀️ Light';
+    document.querySelector('.theme-toggle').textContent = saved === 'dark' ? 'Dark Mode' : 'Light Mode';
   });
 
   function toggleTheme() {
@@ -469,10 +417,10 @@
     const newTheme = cur === 'dark' ? 'light' : 'dark';
     document.body.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
-    document.querySelector('.theme-toggle').textContent = newTheme === 'dark' ? '🌙 Dark' : '☀️ Light';
+    document.querySelector('.theme-toggle').textContent = newTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
   }
 
-  // ==== DATE CALCULATIONS (unchanged) ====
+  // ==== DATE CALCULATIONS ====
   function calculateNextDue(lastDone, interval) {
     if (!lastDone) return '';
     const d = new Date(lastDone);
@@ -481,7 +429,6 @@
     else if (interval === 'quarterly') d.setMonth(d.getMonth() + 3);
     return d.toISOString().slice(0,10);
   }
-
   function calculateDaysLeft(lastDone, interval) {
     if (!lastDone) return NaN;
     const next = new Date(calculateNextDue(lastDone, interval));
@@ -490,10 +437,7 @@
     return Math.ceil((next - today) / 86400000);
   }
 
-  // ==== NAVIGATION & CALENDAR (unchanged) ====
-  // ... (your navigation, show(), initCalendar() unchanged) ...
-
-
+  // ==== NAVIGATION ====
   document.querySelectorAll('#sidebar-menu li').forEach(li => {
     li.addEventListener('click', () => show(li.dataset.section));
   });
@@ -509,12 +453,9 @@
     if (section === 'maintenance-schedule') populateMaintTable();
     if (section === 'operations-report') populateOperationsReport();
   }
-  
-  // ... your original navigation code ...
 
-  // ==== CALENDAR (unchanged) ====
-
-    function initCalendar() {
+  // ==== CALENDAR ====
+  function initCalendar() {
     const el = document.getElementById('calendar-div');
     if (!el) return;
     if (calendar) calendar.destroy();
@@ -531,12 +472,10 @@
     calendar.render();
   }
 
-  // ... your original calendar code ...
-
   // ==== MAINTENANCE TABLE ====
   function populateMaintTable() {
     const tbody = document.querySelector('#maint-table tbody');
-    tbody.innerHTML = mt.map((m, i) => {
+    tbody.innerHTML = mt.map((m,i) => {
       const next = calculateNextDue(m.lastDone, m.interval);
       const days = calculateDaysLeft(m.lastDone, m.interval);
       const display = isNaN(days) ? '-' : (days >= 0 ? `${days} days` : `${Math.abs(days)} days overdue`);
@@ -545,137 +484,75 @@
         <td>${m.equipment}</td><td>${m.task}</td><td>${m.interval}</td><td>${m.lastDone}</td>
         <td>${next}</td><td style="color:${color};font-weight:700;">${display}</td>
         <td class="maint-actions">
-          <button class="done-btn" onclick="markDone('${m.key}')">Done</button>
-          <button class="edit-btn" onclick="openEditModal('${m.key}', ${i})">Edit</button>
-          <button class="delete-btn" onclick="deleteMaint('${m.key}')">Delete</button>
+          <button class="done-btn" onclick="markDone(${i})">Done</button>
+          <button class="edit-btn" onclick="openEditModal(${i})">Edit</button>
+          <button class="delete-btn" onclick="deleteMaint(${i})">Delete</button>
         </td>
       </tr>`;
     }).join('');
   }
-
-  function markDone(key) {
+  function markDone(idx) {
     const today = new Date().toISOString().slice(0,10);
-    maintenanceRef.child(key).update({ lastDone: today });
+    mt[idx].lastDone = today;
+    set('maintenance', mt);
+    populateMaintTable(); populateDashboard();
+    if (!document.getElementById('calendar').classList.contains('hidden')) initCalendar();
   }
-
-  function deleteMaint(key) {
-    if (confirm('Delete this task?')) { //Fixed paranthesis 
-      maintenanceRef.child(key).remove();
+  function deleteMaint(idx) {
+    if (confirm('Delete this task?')) {
+      mt.splice(idx,1); set('maintenance', mt);
+      populateMaintTable(); populateDashboard();
+      if (!document.getElementById('calendar').classList.contains('hidden')) initCalendar();
     }
   }
-
-  function openEditModal(key) {  
-    // idxForHighlight only for UI if needed
-    const m = maintenanceTasks.find(task => task.key === key);
-    if (!m) return;
-    document.getElementById('edit-index').value = key;  // Now stores Firebase key
+  function openEditModal(idx) {
+    const m = mt[idx];
+    document.getElementById('edit-index').value = idx;
     document.getElementById('edit-equipment').value = m.equipment;
     document.getElementById('edit-task').value = m.task;
     document.getElementById('edit-interval').value = m.interval;
     document.getElementById('edit-last').value = m.lastDone;
     document.getElementById('edit-modal').classList.add('active');
   }
-
   function closeEditModal() { document.getElementById('edit-modal').classList.remove('active'); }
   function closeAddMaintModal() { document.getElementById('add-maint-modal').classList.remove('active'); }
 
   // ==== FORMS ====
   document.getElementById('add-maint-form').onsubmit = e => {
     e.preventDefault();
-    const newTask = {
-      equipment: e.target[0].value.trim(),
-      task: e.target[1].value.trim(),
-      interval: e.target[2].value,
-      lastDone: e.target[3].value
-    };
-    maintenanceRef.push(newTask);
-    closeAddMaintModal();
-    e.target.reset();
+    mt.push({ equipment:e.target[0].value, task:e.target[1].value,
+              interval:e.target[2].value, lastDone:e.target[3].value });
+    set('maintenance', mt); closeAddMaintModal(); e.target.reset();
+    populateMaintTable(); populateDashboard();
+    if (!document.getElementById('calendar').classList.contains('hidden')) initCalendar();
   };
-
   document.getElementById('edit-maint-form').onsubmit = e => {
     e.preventDefault();
-    const key = document.getElementById('edit-index').value;  // Firebase key
-    const updatedTask = {
-      equipment: e.target[0].value.trim(),
-      task: e.target[1].value.trim(),
-      interval: e.target[2].value,
-      lastDone: e.target[3].value
-    };
-    maintenanceRef.child(key).update(updatedTask);
-    closeEditModal();
+    const i = parseInt(document.getElementById('edit-index').value);
+    mt[i] = { equipment:e.target[0].value, task:e.target[1].value,
+              interval:e.target[2].value, lastDone:e.target[3].value };
+    set('maintenance', mt); closeEditModal();
+    populateMaintTable(); populateDashboard();
+    if (!document.getElementById('calendar').classList.contains('hidden')) initCalendar();
   };
-
-  // ... (other forms: add-eq-form, add-status-form unchanged) ...
-
   document.getElementById('add-eq-form').onsubmit = e => {
     e.preventDefault();
-    const newEq = {
-      Shaft: e.target[0].value,
-      Level: e.target[1].value,
-      'Loco Size': e.target[2].value,
-      'Loco Number': e.target[3].value,
-      SECTION: e.target[4].value
-    };
-    equipmentRef.push(newEq);
-    e.target.reset();
+    eq.push({ Shaft:e.target[0].value, Level:e.target[1].value,
+              'Loco Size':e.target[2].value, 'Loco Number':e.target[3].value,
+              SECTION:e.target[4].value });
+    set('equipment', eq); fillDatalist(); populateDashboard(); populateEquipmentTable(); e.target.reset();
   };
-
   document.getElementById('add-status-form').onsubmit = e => {
     e.preventDefault();
-    const newUpdate = {
-      Date: e.target[0].value,
-      Time: e.target[1].value,
-      'Equipment ID': e.target[2].value,
-      Status: e.target[3].value,
-      Shift: e.target[4].value,
-      'Reason/Fault': e.target[5].value,
-      'Downtime Hours': parseFloat(e.target[6].value) || 0,
-      'Is Failure?': parseInt(e.target[7].value)
-    };
-    updatesRef.push(newUpdate);
-    e.target.reset();
+    up.push({ Date:e.target[0].value, Time:e.target[1].value,
+              'Equipment ID':e.target[2].value, Status:e.target[3].value,
+              Shift:e.target[4].value, 'Reason/Fault':e.target[5].value,
+              'Downtime Hours':parseFloat(e.target[6].value)||0,
+              'Is Failure?':parseInt(e.target[7].value) });
+    set('updates', up); populateDashboard(); populateLogTable(); populateSummaryTable(); e.target.reset();
   };
 
-  // ==== REAL-TIME LISTENERS (now store key in objects) ====
-  equipmentRef.on('value', snap => {
-    eq = [];
-    snap.forEach(child => {
-      eq.push({ ...child.val(), key: child.key });
-    });
-    fillDatalist();
-    populateDashboard();
-    populateEquipmentTable();
-    populateSummaryTable();
-  });
-
-  updatesRef.on('value', snap => {
-    up = [];
-    snap.forEach(child => {
-      up.push({ ...child.val(), key: child.key });
-    });
-    populateDashboard();
-    populateLogTable();
-    populateSummaryTable();
-  });
-
-  maintenanceRef.on('value', snap => {
-    mt = [];
-    snap.forEach(child => {
-      mt.push({ ...child.val(), key: child.key });
-    });
-    populateMaintTable();
-    populateDashboard();
-    if (!document.getElementById('calendar').classList.contains('hidden')) initCalendar();
-  });
-
-  delaysRef.on('value', snap => {
-    delaysData = [];
-    snap.forEach(child => {
-      delaysData.push(child.val());
-    });
-    // Future: use for dynamic delay chart
-    // ==== SEARCH ====
+  // ==== SEARCH ====
   document.getElementById('search-form').onsubmit = e => {
     e.preventDefault();
     const loco = e.target[0].value.trim();
@@ -738,18 +615,7 @@
     addShaft.innerHTML = '<option value="">Select Shaft</option>' + shafts.map(s=>`<option>${s}</option>`).join('');
   }
 
-  });
-
-// ==== INITIAL SETUP (remove get/set calls) ====
-  document.getElementById('m-last').value = new Date().toISOString().slice(0,10);
-  document.getElementById('u-date').value = new Date().toISOString().slice(0,10);
-  document.getElementById('s-date').value = new Date().toISOString().slice(0,10);
-
-  fillDatalist();
-  show('dashboard');
-
-  // ... (rest of your functions: populateDashboard, getStatus, fillDatalist, exports, etc. remain unchanged) ...
-  // ==== OTHER FUNCTIONS (populateDashboard, fillDatalist, etc.) remain the same ====
+  // ==== POPULATE DASHBOARD ====
   function populateDashboard() {
     const shaft = document.getElementById('shaft-filter').value;
     const filtered = shaft ? eq.filter(e=>e.Shaft===shaft) : eq;
@@ -1013,37 +879,57 @@
   }
 
   // ==== INITIAL LOAD ====
-  
- equipmentRef.on('value', snap => {
-  if (snap.val() === null) {
-    // Push fallback data to Firebase (only once)
-    const defaultEq = [
+  eq = get('equipment'); up = get('updates'); mt = get('maintenance'); delaysData = get('delays');
+  if (!eq.length) {
+    eq = [
       {Shaft:'1 Shaft',Level:'14 Level','Loco Size':'10t Loco','Loco Number':'364',SECTION:'1245'},
-      // ... add the rest of your fallback array here ...
+      {Shaft:'CLAPHAM',Level:'15 Level','Loco Size':'8t Loco','Loco Number':'217',SECTION:'5678'},
+      {Shaft:'North Decline',Level:'20 Level','Loco Size':'12t Loco','Loco Number':'412',SECTION:'8901'},
+      {Shaft:'1 Shaft',Level:'16 Level','Loco Size':'10t Loco','Loco Number':'444',SECTION:'2234'},
+      {Shaft:'1 Shaft',Level:'17 Level','Loco Size':'10t Loco','Loco Number':'155',SECTION:'3345'},
+      {Shaft:'1 Shaft',Level:'18 Level','Loco Size':'10t Loco','Loco Number':'158',SECTION:'4456'},
+      {Shaft:'1 Shaft',Level:'19 Level','Loco Size':'10t Loco','Loco Number':'15',SECTION:'5567'},
+      {Shaft:'1 Shaft',Level:'20 Level','Loco Size':'10t Loco','Loco Number':'270',SECTION:'6678'}
     ];
-    defaultEq.forEach(item => equipmentRef.push(item));
-  } else {
-    eq = [];
-    snap.forEach(child => {
-      eq.push({ ...child.val(), key: child.key });
-    });
-    fillDatalist();
-    populateDashboard();
-    populateEquipmentTable();
-    populateSummaryTable();
+    set('equipment',eq);
   }
-});
+  if (!up.length) {
+    up = [
+      { Date: '2025-11-05', Time: '07:30', 'Equipment ID': '364', Status: 'Fixed', Shift: 'Morning', 'Reason/Fault': 'Brake pads replaced', 'Downtime Hours': 3.5, 'Is Failure?': 1 },
+      { Date: '2025-11-04', Time: '14:20', 'Equipment ID': '217', Status: 'Down', Shift: 'Afternoon', 'Reason/Fault': 'Hydraulic leak', 'Downtime Hours': 8, 'Is Failure?': 1 },
+      { Date: '2025-11-10', Time: '09:00', 'Equipment ID': '15', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'BRAKES', 'Downtime Hours': 384, 'Is Failure?': 1 },
+      { Date: '2025-11-10', Time: '10:00', 'Equipment ID': '270', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'Not Starting', 'Downtime Hours': 0, 'Is Failure?': 1 },
+      { Date: '2025-11-10', Time: '11:00', 'Equipment ID': '155', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'BRAKES FAILURE', 'Downtime Hours': 0, 'Is Failure?': 1 }
+    ];
+    set('updates',up);
+  }
+  if (!mt.length) {
+    mt = [
+      {equipment:'364',task:'Oil Change',interval:'monthly',lastDone:'2025-05-01'},
+      {equipment:'444',task:'Brake Inspection',interval:'weekly',lastDone:'2025-05-20'},
+      {equipment:'217',task:'Service',interval:'weekly',lastDone:'2025-11-08'},
+      {equipment:'155',task:'REPLACE BRAKE SHOES',interval:'weekly',lastDone:'2025-11-07'},
+      {equipment:'158',task:'CHANGE OIL',interval:'weekly',lastDone:'2025-11-07'}
+    ];
+    set('maintenance',mt);
+  }
+  if (!delaysData.length) {
+    delaysData = [
+      { equipment: '364', reason: 'Awaiting Spares', hours: 8, date: '2025-11-04' },
+      { equipment: '217', reason: 'Safety Stand-down', hours: 4, date: '2025-11-05' }
+    ];
+    set('delays', delaysData);
+  }
+
+  document.getElementById('m-last').value = new Date().toISOString().slice(0,10);
+  document.getElementById('u-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('s-date').value = new Date().toISOString().slice(0,10);
+
+  fillDatalist(); populateDashboard(); populateLogTable(); populateSummaryTable();
+  populateEquipmentTable(); populateMaintTable(); show('dashboard');
+
+
 
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
