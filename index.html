@@ -13,8 +13,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
 
-
-
   <style>
     :root{
       --bg:#0a0e17; --card:#1a2332; --txt:#e2e8f0; --border:#334155; --hdr:#1e293b;
@@ -240,9 +238,7 @@
 
       <!-- ADD EQUIPMENT -->
       <section id="add-equipment" class="hidden">
-
         <div class="header-bar"><h1>Add New Equipment</h1></div>
-
         <form id="add-eq-form" style="max-width:600px;">
           <div class="form-group"><label>Shaft</label><select id="shaft" required><option value="">Select Shaft</option></select></div>
           <div class="form-group"><label>Level</label><input id="level" type="text" required></div>
@@ -348,8 +344,6 @@
       <!-- OPERATIONS REPORT -->
       <section id="operations-report" class="hidden">
         <div class="header-bar">
-
-
           <h1>All Operations Report</h1>
           <button class="export primary" onclick="exportOperationsReportPDF()">Export Report (PDF)</button>
         </div>
@@ -372,8 +366,6 @@
         <div style="background:var(--card);padding:2rem;border-radius:var(--radius);box-shadow:var(--shadow);margin:1.8rem 0;">
           <h2 style="color:var(--teal);margin-bottom:1rem;">Focus Areas: High Risk Equipment</h2>
           <table style="width:100%;">
-
-
             <thead><tr><th>Equipment ID</th><th>Number of Failures</th><th>MTTF (Days)</th><th>Availability %</th></tr></thead>
             <tbody id="high-risk-tbody"></tbody>
           </table>
@@ -411,7 +403,6 @@
     document.body.setAttribute('data-theme', saved);
     document.querySelector('.theme-toggle').textContent = saved === 'dark' ? 'Dark Mode' : 'Light Mode';
   });
-
   function toggleTheme() {
     const cur = document.body.getAttribute('data-theme');
     const newTheme = cur === 'dark' ? 'light' : 'dark';
@@ -760,27 +751,27 @@
     if (!id) return alert('Select an Equipment ID first');
     const {jsPDF} = window.jspdf;
     const doc = new jsPDF();
-    let y = 16;
-    doc.setFontSize(12);
-    doc.text('Job Order:',16,y); y+=12;
-    doc.text('Follow correct procedure to complete the task and attach risk assessment',16,y); y+=16;
-    doc.text('Work carried out / comments:',16,y); y+=10;
-    for (let i=0;i<3;i++){doc.line(16,y,190,y);y+=10;} y+=10;
-    doc.text('Job duration:',16,y); y+=10;
-    doc.text('Start date ______   Start time ______   End date ______   End time ______   Duration ______',16,y); y+=16;
-    doc.text('Failure Information:',16,y); y+=10;
+    let y = 14;
+    doc.setFontSize(11);
+    doc.text('Job Order:',14,y); y+=11;
+    doc.text('Follow correct procedure to complete the task and attach risk assessment',14,y); y+=14;
+    doc.text('Work carried out / comments:',14,y); y+=10;
+    for (let i=0;i<3;i++){doc.line(14,y,190,y);y+=10;} y+=10;
+    doc.text('Job duration:',14,y); y+=10;
+    doc.text('Start date ______   Start time ______   End date ______   End time ______   Duration ______',14,y); y+=14;
+    doc.text('Failure Information:',14,y); y+=10;
     doc.autoTable({startY:y,head:[['Object part','Problem','Cause of damage','Activity carried out']],body:[['','','','']],theme:'grid',headStyles:{fillColor:[0,128,128]}});
-    y = doc.lastAutoTable.finalY + 12;
-    doc.text("Five Why's:",16,y); y+=10;
+    y = doc.lastAutoTable.finalY + 11;
+    doc.text("Five Why's:",14,y); y+=10;
     doc.autoTable({startY:y,head:[['Why','Why','Why','Why','Why']],body:[['','','','','']],theme:'grid',headStyles:{fillColor:[0,128,128]}});
-    y = doc.lastAutoTable.finalY + 12;
-    doc.text('Lost time/delays (Hrs):',16,y); y+=10;
+    y = doc.lastAutoTable.finalY + 11;
+    doc.text('Lost time/delays (Hrs):',14,y); y+=10;
     doc.autoTable({startY:y,head:[['Safety','Work Issues','Awaiting Spares','Hospital Visits','Awaiting Transport','Travel Time','Weather','Machn. Rel.']],body:[['SA','WI','AS','HV','AT','TT','WH','MR']],theme:'grid',headStyles:{fillColor:[0,128,128]}});
-    y = doc.lastAutoTable.finalY + 12;
-    doc.text('Name- Artisan: ______   Sign: ______   Date: ______',16,y); y+=16;
-    doc.text('Comments- Foreman:',16,y); y+=10;
-    for (let i=0;i<3;i++){doc.line(16,y,190,y);y+=10;} y+=10;
-    doc.text('Name- Foreman: ______   Sign: ______   Date: ______',16,y);
+    y = doc.lastAutoTable.finalY + 11;
+    doc.text('Name- Artisan: ______   Sign: ______   Date: ______',14,y); y+=14;
+    doc.text('Comments- Foreman:',14,y); y+=10;
+    for (let i=0;i<3;i++){doc.line(15,y,190,y);y+=10;} y+=10;
+    doc.text('Name- Foreman: ______   Sign: ______   Date: ______',14,y);
     doc.save(`Job_Order_${id}.pdf`);
   }
 
@@ -927,9 +918,9 @@
 
   fillDatalist(); populateDashboard(); populateLogTable(); populateSummaryTable();
   populateEquipmentTable(); populateMaintTable(); show('dashboard');
-
-
-
 </script>
 </body>
 </html>
+
+
+
