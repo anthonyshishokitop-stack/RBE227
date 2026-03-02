@@ -326,7 +326,6 @@
       border-radius:var(--radius-lg);
       margin:1.5rem 0;
       border-left:7px solid;
-      background:rgba(220,38,38,0.08);
       box-shadow:var(--shadow-sm);
     }
 
@@ -817,17 +816,17 @@
 
   function getEquipmentStatus(id) {
     const eu = up.filter(u => u['Equipment ID'] === id).sort((a,b) => new Date(b.Date+' '+b.Time) - new Date(a.Date+' '+a.Time));
-    if (!eu.length) return {status:'Up', downtime:0, availability:100, lastUpdate:'-', color:'green'};
+    if (!eu.length) return {status:'Up', downtime:0, availability:'100.0', lastUpdate:'-', color:'green'};
 
     const last = eu[0];
-    if (last.Status === 'Fixed') return {status:'Up', downtime:0, availability:100, lastUpdate:`${last.Date} ${last.Time}`, color:'green'};
+    if (last.Status === 'Fixed') return {status:'Up', downtime:0, availability:'100.0', lastUpdate:`${last.Date} ${last.Time}`, color:'green'};
 
     const totalDowntimeH = eu.reduce((s,u) => s + (parseFloat(u['Downtime Hours'])||0), 0);
-    const allDates = [...new Set(up.map(u=>u.Date))].sort();
-    const minD = allDates[0] || new Date().toISOString().slice(0,10);
-    const maxD = allDates[allDates.length-1] || new Date().toISOString().slice(0,10);
+    const datesForCalc = [...new Set(eu.map(u=>u.Date))].sort();
+    const minD = datesForCalc[0] || new Date().toISOString().slice(0,10);
+    const maxD = datesForCalc[datesForCalc.length-1] || new Date().toISOString().slice(0,10);
     const totalDays = Math.ceil((new Date(maxD) - new Date(minD)) / 86400000) + 1;
-    const avail = totalDays > 0 ? ((totalDays - totalDowntimeH/24) / totalDays * 100) : 100;
+    const avail = totalDays > 0 ? Math.max(0, Math.min(100, (totalDays - totalDowntimeH/24) / totalDays * 100)) : 100;
 
     return {
       status: 'Down',
@@ -879,8 +878,6 @@
     const availData = locoIds.map(id => parseFloat(getEquipmentStatus(id).availability));
     const failureData = locoIds.map(id => filteredUp.filter(u=>u['Equipment ID']===id && u['Is Failure?']==='1').length);
     
-    // REAL CALCULATED MTTF (days) based on actual entries
-    // Operating days in the observation period (first-to-last update date) divided by number of failures
     const mttfData = locoIds.map(id => {
       const eu = filteredUp.filter(u => u['Equipment ID'] === id);
       const fails = eu.filter(u => u['Is Failure?'] === '1').length;
@@ -892,7 +889,7 @@
       const maxD = new Date(sortedDates[sortedDates.length - 1]);
       const totalDays = Math.ceil((maxD - minD) / 86400000) + 1;
       const downH = eu.reduce((s, u) => s + (parseFloat(u['Downtime Hours']) || 0), 0);
-      const opDays = Math.max(0, totalDays - downH / 24); // prevent negative
+      const opDays = Math.max(0, totalDays - downH / 24);
       return parseFloat((opDays / fails).toFixed(1));
     });
 
@@ -942,12 +939,27 @@
       if (st.status === 'Down') {
         const eu = up.filter(u => u['Equipment ID'] === id).sort((a,b)=>new Date(b.Date+' '+b.Time)-new Date(a.Date+' '+a.Time));
         const lastDown = eu.find(u => u.Status === 'Down');
-        problemRows.push([id, 'Down', st.downtime>168?'RED':'ORANGE', lastDown?.['Reason/Fault']||'-', st.downtime.toFixed(1)]);
+        const color = st.downtime>168?'RED':'ORANGE';
+        problemRows.push([id, 'Down', color, lastDown?.['Reason/Fault']||'-', st.downtime.toFixed(1)]);
       }
 
       const fails = up.filter(u => u['Equipment ID']===id && u['Is Failure?']==='1').length;
       if (fails >= 3 || parseFloat(st.availability) < 92) {
-        highRiskRows.push([id, fails, st.availability, st.availability]);
+        let mttfVal = 'N/A';
+        const eu = up.filter(u => u['Equipment ID'] === id);
+        if (fails > 0) {
+          const uniqueDates = [...new Set(eu.map(u => u.Date))];
+          if (uniqueDates.length > 0) {
+            const sortedDates = uniqueDates.sort();
+            const minD = new Date(sortedDates[0]);
+            const maxD = new Date(sortedDates[sortedDates.length - 1]);
+            const totalDays = Math.ceil((maxD - minD) / 86400000) + 1;
+            const downH = eu.reduce((s, u) => s + (parseFloat(u['Downtime Hours']) || 0), 0);
+            const opDays = Math.max(0, totalDays - downH / 24);
+            mttfVal = (opDays / fails).toFixed(1);
+          }
+        }
+        highRiskRows.push([id, fails, mttfVal, st.availability]);
       }
     });
 
@@ -1078,7 +1090,6 @@
     }
   }
 
-  // ==================== ALL EXPORT FUNCTIONS (FULLY WORKING) ====================
   function exportDashboardPDF() {
     html2canvas(document.getElementById('dashboard'), {scale:2}).then(canvas => {
       const {jsPDF} = window.jspdf;
@@ -1179,7 +1190,6 @@
     });
   }
 
-  // ==================== EXCEL IMPORT (FULL WORKING) ====================
   function handleFileUpload() {
     const file = document.getElementById('excel-file').files[0];
     if (!file) return alert('Select Excel file');
@@ -1298,6 +1308,11 @@
     });
 
     set('updates', up);
+    const selectedShaft = document.getElementById('import-shaft').value;
+    if (selectedShaft) {
+      document.getElementById('shaft-filter').value = selectedShaft;
+      currentShaftFilter = selectedShaft;
+    }
     alert(`Imported ${count} record(s)!`);
     refreshCurrentView();
     document.getElementById('preview-section').classList.add('hidden');
@@ -1381,7 +1396,7 @@
     });
   });
 
-  // INITIAL LOAD – ENHANCED SAMPLE DATA FOR REAL GRAPH CALCULATIONS
+  // INITIAL LOAD – ENHANCED SAMPLE DATA
   eq = get('equipment');
   up = get('updates');
   mt = get('maintenance');
@@ -1434,6 +1449,16 @@
       {equipment:'217',task:'Service',interval:'weekly',lastDone:'2025-11-08'}
     ];
     set('maintenance', mt);
+  }
+
+  if (!delaysData.length) {
+    delaysData = [
+      {equipment:'364',reason:'Awaiting Spares',hours:8,date:'2025-11-04'},
+      {equipment:'217',reason:'Safety Stand-down',hours:4,date:'2025-11-05'},
+      {equipment:'155',reason:'Parts Delay',hours:6,date:'2025-11-10'},
+      {equipment:'270',reason:'Operator Training',hours:3,date:'2025-11-09'}
+    ];
+    set('delays', delaysData);
   }
 
   if (localStorage.getItem('theme') === 'dark') {
