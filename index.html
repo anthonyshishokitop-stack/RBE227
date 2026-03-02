@@ -75,7 +75,6 @@
       min-height:100vh;
     }
 
-    /* ─── SIDEBAR ──────────────────────────────────────────────── */
     .sidebar {
       width: var(--sidebar-width);
       background:#1e293b;
@@ -145,7 +144,6 @@
       cursor:pointer;
     }
 
-    /* ─── MAIN ─────────────────────────────────────────────────── */
     .main {
       flex:1;
       padding:1.5rem;
@@ -302,6 +300,27 @@
       background:rgba(29,78,216,0.06);
     }
 
+    .btn {
+      padding:0.8rem 1.6rem;
+      border:none;
+      border-radius:var(--radius-md);
+      font-weight:600;
+      cursor:pointer;
+      transition:all 0.2s;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    .btn-primary   { background:var(--primary); color:white; }
+    .btn-primary:hover { background:var(--primary-600); }
+    .btn-success   { background:var(--success); color:white; }
+    .btn-success:hover { background:#15803d; }
+    .btn-danger    { background:var(--danger); color:white; }
+    .btn-danger:hover { background:#b91c1c; }
+    .btn-info      { background:var(--info); color:white; }
+    .btn-info:hover { background:#0e7490; }
+
     .alert-banner {
       padding:1.35rem 1.75rem;
       border-radius:var(--radius-lg);
@@ -366,31 +385,6 @@
       box-shadow:0 0 0 3px rgba(29,78,216,0.15);
     }
 
-    button {
-      padding:0.8rem 1.6rem;
-      border:none;
-      border-radius:var(--radius-md);
-      font-weight:600;
-      cursor:pointer;
-      transition:all 0.2s;
-    }
-
-    button.primary {
-      background:var(--primary);
-      color:white;
-    }
-
-    button.primary:hover { background:var(--primary-600); }
-
-    button.success  { background:var(--success);  color:white; }
-    button.success:hover { background: #15803d; }
-    button.warn     { background:var(--warning);  color:white; }
-    button.warn:hover { background: #c2410c; }
-    button.danger   { background:var(--danger);   color:white; }
-    button.danger:hover { background: #b91c1c; }
-    button.maint { background:var(--info); color:white; }
-    button.maint:hover { background: #0e7490; }
-
     .live-indicator {
       position:fixed;
       bottom:20px;
@@ -410,7 +404,6 @@
 
     .hidden { display: none !important; }
 
-    /* RESPONSIVE */
     @media (min-width: 1025px) {
       .sidebar {
         position: sticky;
@@ -440,6 +433,7 @@
       .kpi-grid { grid-template-columns:1fr; }
       .chart-container { height:320px; }
       h1 { font-size:1.5rem; }
+      #calendar-div { padding:1rem !important; }
     }
   </style>
 </head>
@@ -480,7 +474,7 @@
             <select id="shaft-filter" onchange="filterDashboard()">
               <option value="">All Shafts</option>
             </select>
-            <button class="primary" onclick="exportDashboardPDF()"><i class="fas fa-file-pdf"></i> Export Dashboard PDF</button>
+            <button class="btn btn-primary" onclick="exportDashboardPDF()"><i class="fas fa-file-pdf"></i> Export Dashboard PDF</button>
           </div>
         </div>
 
@@ -517,7 +511,7 @@
         </div>
 
         <div class="card" style="border-left:6px solid var(--info);">
-          <h2><i class="fas fa-wrench"></i> Upcoming &amp; Overdue Maintenance</h2>
+          <h2><i class="fas fa-wrench"></i> Upcoming & Overdue Maintenance</h2>
           <div id="maintenance-list" style="display:grid;gap:1rem;font-size:0.98rem;"></div>
         </div>
       </section>
@@ -531,7 +525,7 @@
           <div class="form-group"><label>Loco Size</label><input id="loco-size" type="text" required></div>
           <div class="form-group"><label>Loco Number</label><input id="loco-number" type="text" required></div>
           <div class="form-group"><label>SECTION</label><input id="section" type="text" required></div>
-          <button type="submit" class="primary" style="width:100%;margin-top:1rem;">Add Equipment</button>
+          <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;">Add Equipment</button>
         </form>
       </section>
 
@@ -547,7 +541,7 @@
           <div class="form-group"><label>Reason/Fault</label><textarea id="u-reason" required></textarea></div>
           <div class="form-group"><label>Downtime Hours</label><input id="u-downtime" type="number" step="0.1" min="0"></div>
           <div class="form-group"><label>Is Failure?</label><select id="u-failure"><option value="0">No</option><option value="1">Yes</option></select></div>
-          <button type="submit" class="primary" style="width:100%;margin-top:1rem;">Submit Update</button>
+          <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;">Submit Update</button>
         </form>
       </section>
 
@@ -563,8 +557,8 @@
             <label for="show-all-history" style="margin:0;font-weight:600;">Show Full History</label>
           </div>
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <button type="submit" class="primary">Search</button>
-            <button type="button" class="maint" onclick="generateJobPDF()"><i class="fas fa-file-pdf"></i> Job Order PDF</button>
+            <button type="submit" class="btn btn-primary">Search</button>
+            <button type="button" class="btn btn-info" onclick="generateJobPDF()"><i class="fas fa-file-pdf"></i> Job Order PDF</button>
           </div>
         </form>
         <div id="search-results" style="margin-top:2rem;"></div>
@@ -574,7 +568,7 @@
       <section id="status-log" class="hidden">
         <div class="header-bar">
           <h1>Full Status Log</h1>
-          <button class="primary" onclick="exportLogCSV()"><i class="fas fa-file-csv"></i> Export Log (CSV)</button>
+          <button class="btn btn-primary" onclick="exportLogCSV()"><i class="fas fa-file-csv"></i> Export Log (CSV)</button>
         </div>
         <div style="overflow-x:auto;">
           <table id="log-table">
@@ -584,15 +578,19 @@
         </div>
       </section>
 
-      <!-- ANALYTICS -->
+      <!-- SUMMARY -->
       <section id="summary" class="hidden">
         <div class="header-bar">
           <h1>Fleet Analytics</h1>
-          <button class="primary" onclick="exportDashboardPDF()"><i class="fas fa-file-pdf"></i> Export Analytics Report</button>
+          <button class="btn btn-primary" onclick="exportSummaryPDF()"><i class="fas fa-file-pdf"></i> Export Fleet Summary (PDF)</button>
         </div>
         <div style="overflow-x:auto;">
           <table id="summary-table">
-            <thead><tr><th>ID</th><th>Updates</th><th>Total Days</th><th>Down Days</th><th>Op Days</th><th>Failures</th><th>MTTF</th><th>Avail %</th><th>Last Update</th><th>Status</th></tr></thead>
+            <thead>
+              <tr>
+                <th>ID</th><th>Updates</th><th>Total Days</th><th>Down Days</th><th>Op Days</th><th>Failures</th><th>MTTF</th><th>Avail %</th><th>Last Update</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
             <tbody></tbody>
           </table>
         </div>
@@ -600,7 +598,10 @@
 
       <!-- MANAGE EQUIPMENT -->
       <section id="manage-equipment" class="hidden">
-        <div class="header-bar"><h1>Equipment List</h1></div>
+        <div class="header-bar">
+          <h1>Equipment List</h1>
+          <button class="btn btn-primary" onclick="exportEquipmentPDF()"><i class="fas fa-file-pdf"></i> Export Register PDF</button>
+        </div>
         <div style="overflow-x:auto;">
           <table id="equipment-table">
             <thead><tr><th>Shaft</th><th>Level</th><th>Loco Size</th><th>Loco Number</th><th>SECTION</th></tr></thead>
@@ -614,8 +615,8 @@
         <div class="header-bar">
           <h1>Maintenance Schedule</h1>
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <button class="primary" onclick="document.getElementById('add-maint-modal').classList.add('active')">+ Add Task</button>
-            <button class="primary" onclick="exportMaintPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
+            <button class="btn btn-primary" onclick="document.getElementById('add-maint-modal').classList.add('active')">+ Add Task</button>
+            <button class="btn btn-primary" onclick="exportMaintPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
           </div>
         </div>
         <div style="overflow-x:auto;">
@@ -636,7 +637,7 @@
       <section id="operations-report" class="hidden">
         <div class="header-bar">
           <h1>All Operations Report</h1>
-          <button class="primary" onclick="exportOperationsReportPDF()"><i class="fas fa-file-pdf"></i> Export Report (PDF)</button>
+          <button class="btn btn-primary" onclick="exportOperationsReportPDF()"><i class="fas fa-file-pdf"></i> Export Report (PDF)</button>
         </div>
         <h2 style="color:var(--teal);"><i class="fas fa-chart-line"></i> Operation Status</h2>
         <div style="overflow-x:auto;">
@@ -661,29 +662,35 @@
         </div>
       </section>
 
-      <!-- NEW IMPORT SECTION -->
+      <!-- IMPORT SPREADSHEET -->
       <section id="import-spreadsheet" class="hidden">
         <div class="header-bar">
           <h1>Import Breakdown Report (Excel)</h1>
         </div>
         <div class="card">
           <p><strong>Upload Report.xlsx</strong><br>Only the <strong>Breakdown Report</strong> sheet will be processed.<br>Data will be mapped and merged into the live RBE status log.</p>
+          <div class="form-group" style="max-width:500px; margin:1.5rem 0;">
+            <label><strong>Shaft for this import batch</strong> (recommended)</label>
+            <select id="import-shaft">
+              <option value="">Do not set shaft (use equipment lookup)</option>
+            </select>
+          </div>
           <input type="file" id="excel-file" accept=".xlsx,.xls" style="margin:1rem 0;display:block;width:100%;">
-          <button class="primary" onclick="handleFileUpload()" style="width:100%;">📤 Parse Excel &amp; Start Mapping</button>
+          <button class="btn btn-primary" onclick="handleFileUpload()" style="width:100%;">📤 Parse Excel & Start Mapping</button>
         </div>
 
         <div id="mapping-section" class="card hidden">
           <h2>Map Columns to RBE Fields</h2>
           <div id="mapping-form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;"></div>
-          <button class="primary" onclick="previewImport()" style="margin-top:1.5rem;width:100%;">Preview Mapped Data &amp; Select Rows</button>
+          <button class="btn btn-primary" onclick="previewImport()" style="margin-top:1.5rem;width:100%;">Preview Mapped Data & Select Rows</button>
         </div>
 
         <div id="preview-section" class="card hidden">
-          <h2>Preview &amp; Select Rows to Import</h2>
+          <h2>Preview & Select Rows to Import</h2>
           <div style="overflow-x:auto;max-height:420px;" id="preview-table"></div>
           <div style="margin-top:1rem;display:flex;gap:1rem;">
-            <button class="success" onclick="importSelectedRows()" style="flex:1;">✅ Import Selected Rows to System</button>
-            <button class="danger" onclick="document.getElementById('preview-section').classList.add('hidden')" style="flex:1;">Cancel</button>
+            <button class="btn btn-success" onclick="importSelectedRows()" style="flex:1;">✅ Import Selected Rows to System</button>
+            <button class="btn btn-danger" onclick="document.getElementById('preview-section').classList.add('hidden')" style="flex:1;">Cancel</button>
           </div>
         </div>
       </section>
@@ -696,7 +703,7 @@
 
 <datalist id="loco-list"></datalist>
 
-<!-- MODALS (unchanged) -->
+<!-- MODALS -->
 <div id="edit-modal" class="modal">
   <div class="modal-content">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
@@ -709,7 +716,7 @@
       <div class="form-group"><label>Task</label><input id="edit-task" type="text" required></div>
       <div class="form-group"><label>Interval</label><select id="edit-interval"><option>weekly</option><option>monthly</option><option>quarterly</option></select></div>
       <div class="form-group"><label>Last Done</label><input id="edit-last" type="date" required></div>
-      <button type="submit" class="primary">Save Changes</button>
+      <button type="submit" class="btn btn-primary">Save Changes</button>
     </form>
   </div>
 </div>
@@ -725,7 +732,7 @@
       <div class="form-group"><label>Task</label><input type="text" required></div>
       <div class="form-group"><label>Interval</label><select><option>weekly</option><option>monthly</option><option>quarterly</option></select></div>
       <div class="form-group"><label>Last Done</label><input id="m-last" type="date" required></div>
-      <button type="submit" class="primary">Add Task</button>
+      <button type="submit" class="btn btn-primary">Add Task</button>
     </form>
   </div>
 </div>
@@ -733,6 +740,7 @@
 <script>
   let eq = [], up = [], mt = [], delaysData = [], calendar = null, charts = {};
   let excelData = [], columnHeaders = [], selectedMapping = {};
+  let currentShaftFilter = '';
 
   function get(key) { return JSON.parse(localStorage.getItem(key)) || []; }
   function set(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
@@ -742,7 +750,18 @@
     document.getElementById(section).classList.remove('hidden');
     document.querySelectorAll('#sidebar-menu li').forEach(li => li.classList.remove('active'));
     document.querySelector(`[data-section="${section}"]`).classList.add('active');
-    if (section === 'calendar') initCalendar();
+    refreshCurrentView();
+  }
+
+  function refreshCurrentView() {
+    const section = document.querySelector('section:not(.hidden)').id;
+    if (section === 'dashboard') populateDashboard();
+    else if (section === 'status-log') populateLogTable();
+    else if (section === 'summary') populateSummaryTable();
+    else if (section === 'manage-equipment') populateEquipmentTable();
+    else if (section === 'maintenance-schedule') populateMaintTable();
+    else if (section === 'calendar') initCalendar();
+    else if (section === 'operations-report') populateOperationsReport();
   }
 
   function toggleTheme() {
@@ -761,418 +780,431 @@
   function fillDatalist() {
     const dl = document.getElementById('loco-list');
     dl.innerHTML = eq.map(e => `<option value="${e['Loco Number']}"></option>`).join('');
+
     const job = document.getElementById('job-loco');
     job.innerHTML = '<option value="">Select Equipment</option>' + eq.map(e => `<option value="${e['Loco Number']}">${e['Loco Number']}</option>`).join('');
 
-    const shafts = [ '0 Shaft', '1 Shaft', '2 Shaft', '3 Shaft', '4 Shaft', '5 Shaft', '6 Shaft', '7 Shaft', '7A Shaft', '8 Shaft', '9 Shaft', '10 Shaft', '10D', '11 Shaft', '11C Shaft', '11D', '12 Shaft', '12 North Shaft', '12S', '14 Shaft', '14D', '16 Shaft', '17 Shaft', '20 Shaft', 'CLAPHAM', 'DRIKOP', 'E&F Shaft', 'NORTH SHAFT', 'SOUTH SHAFT', 'STYLDRIFT', 'Winnaarshoek', 'Forest Hill', 'Offset Underground', 'UG2 Main Decline', 'Merensky Main Decline', 'UG2 North Decline', '367-KT (Kalkfontein)', '368-KT (Buffelshoek)', '370-KT (Richmond)', '372-KT (Dwarsrivier)', '373-KT (De Grooteboom)', '374-KT (Tweefontein)', 'Leeuwkop Shaft' ];
+    const shafts = ['0 Shaft','1 Shaft','2 Shaft','3 Shaft','4 Shaft','5 Shaft','6 Shaft','7 Shaft','7A Shaft','8 Shaft','9 Shaft','10 Shaft','10D','11 Shaft','11C Shaft','11D','12 Shaft','12 North Shaft','12S','14 Shaft','14D','16 Shaft','17 Shaft','20 Shaft','CLAPHAM','DRIKOP','E&F Shaft','NORTH SHAFT','SOUTH SHAFT','STYLDRIFT','Winnaarshoek','Forest Hill','Offset Underground','UG2 Main Decline','Merensky Main Decline','UG2 North Decline','367-KT (Kalkfontein)','368-KT (Buffelshoek)','370-KT (Richmond)','372-KT (Dwarsrivier)','373-KT (De Grooteboom)','374-KT (Tweefontein)','Leeuwkop Shaft'];
 
     const shaftSelect = document.getElementById('shaft');
     shaftSelect.innerHTML = '<option value="">Select Shaft</option>' + shafts.map(s => `<option value="${s}">${s}</option>`).join('');
+
     const shaftFilter = document.getElementById('shaft-filter');
     shaftFilter.innerHTML = '<option value="">All Shafts</option>' + shafts.map(s => `<option value="${s}">${s}</option>`).join('');
+
+    const importShaft = document.getElementById('import-shaft');
+    importShaft.innerHTML = '<option value="">Do not set shaft (use equipment lookup)</option>' + shafts.map(s => `<option value="${s}">${s}</option>`).join('');
   }
 
-  function getStatus(id) {
-    const eu = up.filter(u => u['Equipment ID'] === id).sort((a, b) => new Date(b.Date + ' ' + b.Time) - new Date(a.Date + ' ' + a.Time));
-    if (!eu.length) return {status: 'Up', downtime: 0, availability: 100};
+  function getFilteredEquipment() {
+    return currentShaftFilter ? eq.filter(e => e.Shaft === currentShaftFilter) : eq;
+  }
+
+  function getFilteredUpdates() {
+    const ids = getFilteredEquipment().map(e => e['Loco Number']);
+    return up.filter(u => ids.includes(u['Equipment ID']));
+  }
+
+  function getFilteredMaintenance() {
+    const ids = getFilteredEquipment().map(e => e['Loco Number']);
+    return mt.filter(m => ids.includes(m.equipment));
+  }
+
+  function getFilteredDelays() {
+    const ids = getFilteredEquipment().map(e => e['Loco Number']);
+    return delaysData.filter(d => ids.includes(d.equipment));
+  }
+
+  function getEquipmentStatus(id) {
+    const eu = up.filter(u => u['Equipment ID'] === id).sort((a,b) => new Date(b.Date+' '+b.Time) - new Date(a.Date+' '+a.Time));
+    if (!eu.length) return {status:'Up', downtime:0, availability:100, lastUpdate:'-', color:'green'};
+
     const last = eu[0];
-    if (last.Status === 'Fixed') return {status: 'Up', downtime: 0, availability: 100};
-    const downTime = eu.reduce((s, u) => s + (u['Downtime Hours'] || 0), 0);
-    const dates = up.map(u => u.Date);
-    const minD = dates.length ? dates.reduce((a, c) => c < a ? c : a) : new Date().toISOString().slice(0,10);
-    const maxD = dates.length ? dates.reduce((a, c) => c > a ? c : a) : new Date().toISOString().slice(0,10);
+    if (last.Status === 'Fixed') return {status:'Up', downtime:0, availability:100, lastUpdate:`${last.Date} ${last.Time}`, color:'green'};
+
+    const totalDowntimeH = eu.reduce((s,u) => s + (parseFloat(u['Downtime Hours'])||0), 0);
+    const allDates = [...new Set(up.map(u=>u.Date))].sort();
+    const minD = allDates[0] || new Date().toISOString().slice(0,10);
+    const maxD = allDates[allDates.length-1] || new Date().toISOString().slice(0,10);
     const totalDays = Math.ceil((new Date(maxD) - new Date(minD)) / 86400000) + 1;
-    const availability = totalDays > 0 ? ((totalDays - (downTime / 24)) / totalDays * 100).toFixed(1) : 100;
-    return {status: 'Down', downtime: downTime, availability};
+    const avail = totalDays > 0 ? ((totalDays - totalDowntimeH/24) / totalDays * 100) : 100;
+
+    return {
+      status: 'Down',
+      downtime: totalDowntimeH,
+      availability: avail.toFixed(1),
+      lastUpdate: `${last.Date} ${last.Time}`,
+      color: totalDowntimeH > 168 ? 'red' : 'orange'
+    };
   }
 
   function calculateNextDue(last, interval) {
+    if (!last) return null;
     const d = new Date(last);
-    if (interval === 'weekly') d.setDate(d.getDate() + 7);
-    else if (interval === 'monthly') d.setMonth(d.getMonth() + 1);
-    else if (interval === 'quarterly') d.setMonth(d.getMonth() + 3);
+    if (interval==='weekly') d.setDate(d.getDate()+7);
+    else if (interval==='monthly') d.setMonth(d.getMonth()+1);
+    else if (interval==='quarterly') d.setMonth(d.getMonth()+3);
     return d.toISOString().slice(0,10);
   }
 
   function calculateDaysLeft(last, interval) {
-    const due = new Date(calculateNextDue(last, interval));
-    const now = new Date();
-    return Math.ceil((due - now) / 86400000);
+    const due = calculateNextDue(last, interval);
+    if (!due) return NaN;
+    return Math.ceil((new Date(due) - new Date()) / 86400000);
   }
 
-  function populateDashboard(shaft = '') {
-    const filteredEq = shaft ? eq.filter(e => e.Shaft === shaft) : eq;
+  function populateDashboard() {
+    const filteredEq = getFilteredEquipment();
     const locoIds = filteredEq.map(e => e['Loco Number']);
-    const filteredUp = up.filter(u => locoIds.includes(u['Equipment ID']));
-    const filteredMt = mt.filter(m => locoIds.includes(m.equipment));
-    const filteredDelays = delaysData.filter(d => locoIds.includes(d.equipment));
+    const filteredUp = getFilteredUpdates();
+    const filteredMt = getFilteredMaintenance();
 
-    let operational = 0, downLess7 = 0, downMore7 = 0, totalAvail = 0;
+    let operational = 0, downLt7d = 0, downGt7d = 0, totalAvail = 0;
     locoIds.forEach(id => {
-      const status = getStatus(id);
-      if (status.status === 'Up') operational++;
-      else if (status.downtime < 168) downLess7++;
-      else downMore7++;
-      totalAvail += parseFloat(status.availability);
+      const st = getEquipmentStatus(id);
+      if (st.status === 'Up') operational++;
+      else if (st.downtime < 168) downLt7d++;
+      else downGt7d++;
+      totalAvail += parseFloat(st.availability);
     });
-    const availability = locoIds.length ? (totalAvail / locoIds.length).toFixed(1) : 0;
+    const avgAvail = locoIds.length ? (totalAvail / locoIds.length).toFixed(1) : '0.0';
 
     document.getElementById('kpi-grid').innerHTML = `
       <div class="kpi-card green"><i class="fas fa-play-circle"></i><h2>${operational}</h2><p>Operational</p></div>
-      <div class="kpi-card orange"><i class="fas fa-clock"></i><h2>${downLess7}</h2><p>Down &lt;7d</p></div>
-      <div class="kpi-card red"><i class="fas fa-exclamation-circle"></i><h2>${downMore7}</h2><p>Down &gt;7d</p></div>
-      <div class="kpi-card blue"><i class="fas fa-percent"></i><h2>${availability}</h2><p>Availability %</p></div>
+      <div class="kpi-card orange"><i class="fas fa-clock"></i><h2>${downLt7d}</h2><p>Down <7d</p></div>
+      <div class="kpi-card red"><i class="fas fa-exclamation-circle"></i><h2>${downGt7d}</h2><p>Down >7d</p></div>
+      <div class="kpi-card blue"><i class="fas fa-percent"></i><h2>${avgAvail}</h2><p>Availability %</p></div>
     `;
 
-    const availData = locoIds.map(id => getStatus(id).availability);
-    if (charts.avail) charts.avail.destroy();
-    charts.avail = new Chart(document.getElementById('availabilityChart').getContext('2d'), {
-      type: 'bar', data: { labels: locoIds, datasets: [{ data: availData, backgroundColor: '#1d4ed8' }] },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}, x:{grid:{display:false}}} }
-    });
-
-    const failuresData = locoIds.map(id => filteredUp.filter(u => u['Equipment ID'] === id && u['Is Failure?'] === 1).length);
-    if (charts.failures) charts.failures.destroy();
-    charts.failures = new Chart(document.getElementById('failuresChart').getContext('2d'), {
-      type: 'bar', data: { labels: locoIds, datasets: [{ data: failuresData, backgroundColor: '#dc2626' }] },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}, x:{grid:{display:false}}} }
-    });
-
+    const availData = locoIds.map(id => parseFloat(getEquipmentStatus(id).availability));
+    const failureData = locoIds.map(id => filteredUp.filter(u=>u['Equipment ID']===id && u['Is Failure?']==='1').length);
+    
+    // REAL CALCULATED MTTF (days) based on actual entries
+    // Operating days in the observation period (first-to-last update date) divided by number of failures
     const mttfData = locoIds.map(id => {
       const eu = filteredUp.filter(u => u['Equipment ID'] === id);
-      const failures = eu.filter(u => u['Is Failure?'] === 1).length;
-      const dates = eu.map(u => u.Date);
-      const minD = dates.length ? dates.reduce((a, c) => c < a ? c : a) : new Date().toISOString().slice(0,10);
-      const maxD = dates.length ? dates.reduce((a, c) => c > a ? c : a) : new Date().toISOString().slice(0,10);
-      const totalDays = Math.ceil((new Date(maxD) - new Date(minD)) / 86400000) + 1;
-      const downH = eu.reduce((s, u) => s + (u['Downtime Hours'] || 0), 0);
-      const opD = totalDays - (downH / 24);
-      return failures > 0 ? (opD / failures).toFixed(1) : 0;
+      const fails = eu.filter(u => u['Is Failure?'] === '1').length;
+      if (fails === 0) return 0;
+      const uniqueDates = [...new Set(eu.map(u => u.Date))];
+      if (uniqueDates.length === 0) return 0;
+      const sortedDates = uniqueDates.sort();
+      const minD = new Date(sortedDates[0]);
+      const maxD = new Date(sortedDates[sortedDates.length - 1]);
+      const totalDays = Math.ceil((maxD - minD) / 86400000) + 1;
+      const downH = eu.reduce((s, u) => s + (parseFloat(u['Downtime Hours']) || 0), 0);
+      const opDays = Math.max(0, totalDays - downH / 24); // prevent negative
+      return parseFloat((opDays / fails).toFixed(1));
     });
+
+    if (charts.avail) charts.avail.destroy();
+    charts.avail = new Chart(document.getElementById('availabilityChart'), {type:'bar', data:{labels:locoIds, datasets:[{data:availData, backgroundColor:'#1d4ed8'}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}}}});
+
+    if (charts.failures) charts.failures.destroy();
+    charts.failures = new Chart(document.getElementById('failuresChart'), {type:'bar', data:{labels:locoIds, datasets:[{data:failureData, backgroundColor:'#dc2626'}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}});
+
     if (charts.mttf) charts.mttf.destroy();
-    charts.mttf = new Chart(document.getElementById('mttfChart').getContext('2d'), {
-      type: 'bar', data: { labels: locoIds, datasets: [{ data: mttfData, backgroundColor: '#ea580c' }] },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}, x:{grid:{display:false}}} }
-    });
+    charts.mttf = new Chart(document.getElementById('mttfChart'), {type:'bar', data:{labels:locoIds, datasets:[{data:mttfData, backgroundColor:'#ea580c'}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}});
 
-    const reasons = filteredDelays.reduce((acc, d) => { acc[d.reason] = (acc[d.reason] || 0) + d.hours; return acc; }, {});
+    const reasons = getFilteredDelays().reduce((acc,d)=>{acc[d.reason]=(acc[d.reason]||0)+d.hours;return acc;},{});
     if (charts.delay) charts.delay.destroy();
-    charts.delay = new Chart(document.getElementById('delayChart').getContext('2d'), {
-      type: 'pie', data: { labels: Object.keys(reasons), datasets: [{ data: Object.values(reasons), backgroundColor: ['#1d4ed8','#16a34a','#ea580c','#dc2626'] }] },
-      options: { responsive:true, maintainAspectRatio:false }
+    charts.delay = new Chart(document.getElementById('delayChart'), {type:'pie', data:{labels:Object.keys(reasons), datasets:[{data:Object.values(reasons), backgroundColor:['#1d4ed8','#16a34a','#ea580c','#dc2626','#8b5cf6']}]}, options:{responsive:true, maintainAspectRatio:false}});
+
+    const highRisk = locoIds.filter(id => getEquipmentStatus(id).downtime > 168).map(id => {
+      const st = getEquipmentStatus(id);
+      const lastDown = filteredUp.filter(u=>u['Equipment ID']===id && u.Status==='Down').sort((a,b)=>new Date(b.Date+' '+b.Time)-new Date(a.Date+' '+a.Time))[0];
+      return `${id} — ${lastDown?.['Reason/Fault'] || 'Unknown'} (${st.downtime.toFixed(1)} hrs down)`;
     });
+    document.getElementById('high-risk-list').innerHTML = highRisk.map(s=>`<li>${s}</li>`).join('');
+    document.getElementById('high-risk-alerts').classList.toggle('hidden', highRisk.length===0);
 
-    const highRisk = locoIds.filter(id => getStatus(id).downtime > 168);
-    const highRiskList = document.getElementById('high-risk-list');
-    highRiskList.innerHTML = highRisk.map(id => {
-      const lastFault = filteredUp.find(u => u['Equipment ID'] === id && u.Status === 'Down') ? filteredUp.find(u => u['Equipment ID'] === id && u.Status === 'Down')['Reason/Fault'] : 'Unknown';
-      return `<li>${id} — ${lastFault} (${getStatus(id).downtime} hrs down)</li>`;
-    }).join('');
-    document.getElementById('high-risk-alerts').classList.toggle('hidden', highRisk.length === 0);
+    const predictive = filteredMt.map(m => ({...m, days:calculateDaysLeft(m.lastDone, m.interval)})).filter(m => !isNaN(m.days) && m.days <= 7);
+    document.getElementById('predictive-list').innerHTML = predictive.map(p => `<li>${p.equipment} — ${p.task} (${p.days >= 0 ? 'due in '+p.days+' days' : Math.abs(p.days)+' days overdue'})</li>`).join('');
+    document.getElementById('predictive-alerts').classList.toggle('hidden', predictive.length===0);
 
-    const predictive = filteredMt.filter(m => calculateDaysLeft(m.lastDone, m.interval) <= 7);
-    const predictiveList = document.getElementById('predictive-list');
-    predictiveList.innerHTML = predictive.map(p => `<li>${p.equipment} — ${p.task} (due in ${calculateDaysLeft(p.lastDone, p.interval)} days)</li>`).join('');
-    document.getElementById('predictive-alerts').classList.toggle('hidden', predictive.length === 0);
-
-    const maintList = document.getElementById('maintenance-list');
-    maintList.innerHTML = filteredMt.sort((a, b) => calculateDaysLeft(a.lastDone, a.interval) - calculateDaysLeft(b.lastDone, b.interval)).map(m => {
+    document.getElementById('maintenance-list').innerHTML = filteredMt.map(m => {
       const days = calculateDaysLeft(m.lastDone, m.interval);
-      const color = days < 0 ? 'red' : (days <= 7 ? 'orange' : 'green');
-      return `<div style="color:var(--${color});font-weight:500;">${m.equipment} — ${m.task} — ${days >= 0 ? days + ' days left' : Math.abs(days) + ' days overdue'}</div>`;
+      const color = days<0 ? 'red' : (days<=7 ? 'orange' : 'green');
+      const text = days>=0 ? `${days} days left` : `${Math.abs(days)} days overdue`;
+      return `<div style="color:var(--${color});font-weight:500;">${m.equipment} — ${m.task} — ${text}</div>`;
     }).join('');
   }
 
+  function populateOperationsReport() {
+    const allIds = eq.map(e => e['Loco Number']);
+    const statusSummary = {Up:0, Down:0};
+    const problemRows = [];
+    const highRiskRows = [];
+
+    allIds.forEach(id => {
+      const st = getEquipmentStatus(id);
+      statusSummary[st.status] = (statusSummary[st.status]||0) + 1;
+
+      if (st.status === 'Down') {
+        const eu = up.filter(u => u['Equipment ID'] === id).sort((a,b)=>new Date(b.Date+' '+b.Time)-new Date(a.Date+' '+a.Time));
+        const lastDown = eu.find(u => u.Status === 'Down');
+        problemRows.push([id, 'Down', st.downtime>168?'RED':'ORANGE', lastDown?.['Reason/Fault']||'-', st.downtime.toFixed(1)]);
+      }
+
+      const fails = up.filter(u => u['Equipment ID']===id && u['Is Failure?']==='1').length;
+      if (fails >= 3 || parseFloat(st.availability) < 92) {
+        highRiskRows.push([id, fails, st.availability, st.availability]);
+      }
+    });
+
+    const total = allIds.length;
+    const opBody = [
+      ['Up (Green)', statusSummary.Up, total ? ((statusSummary.Up/total)*100).toFixed(2)+'%' : '0.00%'],
+      ['Down', statusSummary.Down, total ? ((statusSummary.Down/total)*100).toFixed(2)+'%' : '0.00%'],
+      ['Total', total, '100.00%']
+    ];
+
+    document.getElementById('op-status-tbody').innerHTML = opBody.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+    document.getElementById('problem-equipment-tbody').innerHTML = problemRows.length ? problemRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:20px;">No problem equipment</td></tr>';
+    document.getElementById('high-risk-tbody').innerHTML = highRiskRows.length ? highRiskRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}%</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:20px;">No high-risk equipment</td></tr>';
+  }
+
   function filterDashboard() {
-    const shaft = document.getElementById('shaft-filter').value;
-    populateDashboard(shaft);
+    currentShaftFilter = document.getElementById('shaft-filter').value;
+    refreshCurrentView();
   }
 
   function searchStatus(loco, date, all) {
     let results = up.filter(u => u['Equipment ID'] === loco);
     if (date && !all) results = results.filter(u => u.Date === date);
-    const html = results.length ? '<table style="width:100%"><thead><tr><th>Date</th><th>Time</th><th>Status</th><th>Shift</th><th>Reason/Fault</th><th>Downtime Hours</th><th>Is Failure?</th></tr></thead><tbody>' + results.map(u => `<tr><td>${u.Date}</td><td>${u.Time}</td><td>${u.Status}</td><td>${u.Shift}</td><td>${u['Reason/Fault']}</td><td>${u['Downtime Hours'] || 0}</td><td>${u['Is Failure?'] === 1 ? 'Yes' : 'No'}</td></tr>`).join('') + '</tbody></table>' : 'No results found.';
+    const html = results.length ? 
+      `<table style="width:100%"><thead><tr><th>Date</th><th>Time</th><th>Status</th><th>Shift</th><th>Reason/Fault</th><th>Downtime Hours</th><th>Is Failure?</th></tr></thead><tbody>` +
+      results.map(u => `<tr><td>${u.Date}</td><td>${u.Time}</td><td>${u.Status}</td><td>${u.Shift}</td><td>${u['Reason/Fault']}</td><td>${u['Downtime Hours']||0}</td><td>${u['Is Failure?']==='1'?'Yes':'No'}</td></tr>`).join('') +
+      `</tbody></table>` : 'No results found.';
     document.getElementById('search-results').innerHTML = html;
-  }
-
-  function populateMaintTable() {
-    const tbody = document.querySelector('#maint-table tbody');
-    tbody.innerHTML = mt.map((m, i) => {
-      const days = calculateDaysLeft(m.lastDone, m.interval);
-      const disp = isNaN(days) ? '-' : (days >= 0 ? days : Math.abs(days) + ' overdue');
-      return `<tr><td>${m.equipment}</td><td>${m.task}</td><td>${m.interval}</td><td>${m.lastDone}</td><td>${calculateNextDue(m.lastDone, m.interval)}</td><td>${disp}</td><td><button onclick="editMaint(${i})">Edit</button> <button class="danger" onclick="deleteMaint(${i})">Delete</button></td></tr>`;
-    }).join('');
-  }
-
-  function editMaint(index) {
-    document.getElementById('edit-index').value = index;
-    document.getElementById('edit-equipment').value = mt[index].equipment;
-    document.getElementById('edit-task').value = mt[index].task;
-    document.getElementById('edit-interval').value = mt[index].interval;
-    document.getElementById('edit-last').value = mt[index].lastDone;
-    document.getElementById('edit-modal').classList.add('active');
-  }
-
-  function deleteMaint(index) {
-    if (confirm('Delete this maintenance task?')) {
-      mt.splice(index, 1);
-      set('maintenance', mt);
-      populateMaintTable();
-      populateDashboard();
-      if (calendar) initCalendar();
-    }
-  }
-
-  function getMaintenanceEvents() {
-    return mt.map(task => {
-      if (!task.lastDone) return null;
-      const dueDate = calculateNextDue(task.lastDone, task.interval);
-      const daysLeft = calculateDaysLeft(task.lastDone, task.interval);
-      let color = '#16a34a';
-      if (daysLeft < 0) color = '#dc2626';
-      else if (daysLeft <= 7) color = '#ea580c';
-      return { title: `${task.equipment} - ${task.task}`, start: dueDate, allDay: true, backgroundColor: color, borderColor: color, extendedProps: { daysLeft } };
-    }).filter(Boolean);
-  }
-
-  function initCalendar() {
-    const calendarEl = document.getElementById('calendar-div');
-    if (calendar) calendar.destroy();
-    calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
-      headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listWeek' },
-      events: getMaintenanceEvents(),
-      eventContent: function(arg) {
-        return { html: `<div style="padding:4px;">${arg.event.title}<br><small>Days left: ${arg.event.extendedProps.daysLeft}</small></div>` };
-      }
-    });
-    calendar.render();
-  }
-
-  function populateOperationsReport() {
-    const opStatusTbody = document.getElementById('op-status-tbody');
-    opStatusTbody.innerHTML = `<tr><td>Covered (Green)</td><td>44</td><td>93.62%</td></tr><tr><td>Covered within 7 days (Orange)</td><td>3</td><td>6.38%</td></tr><tr><td>Overdue (Red)</td><td>0</td><td>0.00%</td></tr><tr><td>Total</td><td>47</td><td>100.00%</td></tr>`;
-    const problemTbody = document.getElementById('problem-equipment-tbody');
-    problemTbody.innerHTML = `<tr><td>15</td><td>Down</td><td>ORANGE</td><td>BRAKES</td><td>384.0</td></tr><tr><td>270</td><td>Down</td><td>ORANGE</td><td>Not Starting</td><td>0.0</td></tr><tr><td>155</td><td>Down</td><td>ORANGE</td><td>BRAKES FAILURE</td><td>0.0</td></tr>`;
-    const highRiskTbody = document.getElementById('high-risk-tbody');
-    highRiskTbody.innerHTML = `<tr><td>15</td><td>15</td><td>11.33</td><td>91.40%</td></tr><tr><td>217</td><td>6</td><td>30.00</td><td>96.77%</td></tr>`;
   }
 
   function populateLogTable() {
     const tbody = document.querySelector('#log-table tbody');
-    tbody.innerHTML = up.sort((a, b) => new Date(b.Date + ' ' + b.Time) - new Date(a.Date + ' ' + a.Time)).map(u => `
-      <tr><td>${u.Date}</td><td>${u.Time}</td><td>${u['Equipment ID']}</td><td>${u.Status}</td><td>${u.Shift}</td><td>${u['Reason/Fault']}</td><td>${u['Downtime Hours'] || 0}</td><td>${u['Is Failure?'] === 1 ? 'Yes' : 'No'}</td></tr>
-    `).join('');
+    const filtered = getFilteredUpdates();
+    tbody.innerHTML = filtered.sort((a,b)=>new Date(b.Date+' '+b.Time)-new Date(a.Date+' '+a.Time))
+      .map(u => `<tr><td>${u.Date}</td><td>${u.Time}</td><td>${u['Equipment ID']}</td><td>${u.Status}</td><td>${u.Shift}</td><td>${u['Reason/Fault']||''}</td><td>${u['Downtime Hours']||0}</td><td>${u['Is Failure?']==='1'?'Yes':'No'}</td></tr>`).join('');
   }
 
-  function populateSummaryTable() { 
-    const dates = up.map(u => u.Date);
-    const minD = dates.length ? dates.reduce((a, c) => c < a ? c : a) : new Date().toISOString().slice(0,10);
-    const maxD = dates.length ? dates.reduce((a, c) => c > a ? c : a) : new Date().toISOString().slice(0,10);
-    const totalDays = Math.ceil((new Date(maxD) - new Date(minD)) / 86400000) + 1;
+  function removeEquipment(locoNumber) {
+    if (!confirm(`Remove ${locoNumber} and ALL related data?`)) return;
+    eq = eq.filter(e => e['Loco Number'] !== locoNumber);
+    up = up.filter(u => u['Equipment ID'] !== locoNumber);
+    mt = mt.filter(m => m.equipment !== locoNumber);
+    set('equipment', eq); set('updates', up); set('maintenance', mt);
+    fillDatalist();
+    refreshCurrentView();
+  }
+
+  function populateSummaryTable() {
+    const filteredEq = getFilteredEquipment();
+    const filteredUp = getFilteredUpdates();
+    const dates = filteredUp.map(u=>u.Date);
+    const minD = dates.length ? dates.reduce((a,c)=>c<a?c:a) : new Date().toISOString().slice(0,10);
+    const maxD = dates.length ? dates.reduce((a,c)=>c>a?c:a) : new Date().toISOString().slice(0,10);
+    const totalDays = Math.ceil((new Date(maxD)-new Date(minD))/86400000)+1;
+
     const tbody = document.querySelector('#summary-table tbody');
-    tbody.innerHTML = eq.map(e => {
+    tbody.innerHTML = filteredEq.map(e => {
       const id = e['Loco Number'];
-      const eu = up.filter(u => u['Equipment ID'] === id);
-      const downH = eu.reduce((s, u) => s + (u['Downtime Hours'] || 0), 0);
-      const downD = downH / 24;
+      const eu = filteredUp.filter(u=>u['Equipment ID']===id);
+      const downH = eu.reduce((s,u)=>s+(parseFloat(u['Downtime Hours'])||0),0);
+      const downD = downH/24;
       const opD = totalDays - downD;
-      const failures = eu.filter(u => u['Is Failure?'] === 1).length;
-      const mttf = failures > 0 ? (opD / failures).toFixed(1) : 'N/A';
-      const avail = totalDays > 0 ? (opD / totalDays * 100).toFixed(1) : 0;
-      const last = eu.sort((a, b) => new Date(b.Date + ' ' + b.Time) - new Date(a.Date + ' ' + a.Time))[0];
-      const status = getStatus(id).status;
-      return `<tr><td>${id}</td><td>${eu.length}</td><td>${totalDays}</td><td>${downD.toFixed(1)}</td><td>${opD.toFixed(1)}</td><td>${failures}</td><td>${mttf}</td><td>${avail}%</td><td>${last ? last.Date + ' ' + last.Time : '-'}</td><td>${status}</td></tr>`;
+      const failures = eu.filter(u=>u['Is Failure?']==='1').length;
+      const mttf = failures>0 ? (opD/failures).toFixed(1) : 'N/A';
+      const avail = totalDays>0 ? (opD/totalDays*100).toFixed(1) : 0;
+      const last = eu.sort((a,b)=>new Date(b.Date+' '+b.Time)-new Date(a.Date+' '+a.Time))[0];
+      const status = getEquipmentStatus(id).status;
+
+      return `<tr><td>${id}</td><td>${eu.length}</td><td>${totalDays}</td><td>${downD.toFixed(1)}</td><td>${opD.toFixed(1)}</td><td>${failures}</td><td>${mttf}</td><td>${avail}%</td><td>${last?last.Date+' '+last.Time:'-'}</td><td>${status}</td><td><button class="btn btn-danger" onclick="removeEquipment('${id}')">Remove</button></td></tr>`;
     }).join('');
   }
 
   function populateEquipmentTable() {
-    const tbody = document.querySelector('#equipment-table tbody');
-    tbody.innerHTML = eq.map(e => `<tr><td>${e.Shaft}</td><td>${e.Level}</td><td>${e['Loco Size']}</td><td>${e['Loco Number']}</td><td>${e.SECTION}</td></tr>`).join('');
+    document.querySelector('#equipment-table tbody').innerHTML = getFilteredEquipment().map(e => `<tr><td>${e.Shaft}</td><td>${e.Level}</td><td>${e['Loco Size']}</td><td>${e['Loco Number']}</td><td>${e.SECTION}</td></tr>`).join('');
   }
 
-  // ─── ENHANCED EXPORTS (FULL INFORMATION) ─────────────────────────────────────
-  function exportDashboardPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'pt', 'a4');
-    let y = 50;
-
-    doc.setFontSize(22);
-    doc.text("Impala Platinum – RBE Equipment Monitor", 40, y);
-    y += 30;
-    doc.setFontSize(11);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 40, y);
-    y += 40;
-
-    doc.setFontSize(14);
-    doc.text("KEY PERFORMANCE INDICATORS", 40, y);
-    y += 20;
-    const kpiRows = Array.from(document.querySelectorAll('.kpi-card')).map(c => [
-      c.querySelector('p').innerText,
-      c.querySelector('h2').innerText
-    ]);
-    doc.autoTable({ startY: y, head: [['Metric', 'Value']], body: kpiRows, theme: 'grid', styles: {fontSize:10} });
-    y = doc.lastAutoTable.finalY + 35;
-
-    const highRiskItems = Array.from(document.querySelectorAll('#high-risk-list li')).map(li => [li.innerText]);
-    if (highRiskItems.length) {
-      doc.text("HIGH RISK EQUIPMENT", 40, y);
-      y += 15;
-      doc.autoTable({ startY: y, body: highRiskItems, theme: 'striped', styles: {fontSize:9} });
-      y = doc.lastAutoTable.finalY + 35;
-    }
-
-    const predItems = Array.from(document.querySelectorAll('#predictive-list li')).map(li => [li.innerText]);
-    if (predItems.length) {
-      doc.text("PREDICTIVE MAINTENANCE ALERTS", 40, y);
-      y += 15;
-      doc.autoTable({ startY: y, body: predItems, theme: 'striped', styles: {fontSize:9} });
-      y = doc.lastAutoTable.finalY + 35;
-    }
-
-    doc.text("FLEET AVAILABILITY BY EQUIPMENT", 40, y);
-    y += 15;
-    const availBody = charts.avail ? charts.avail.data.labels.map((l,i) => [l, charts.avail.data.datasets[0].data[i] + '%']) : [];
-    doc.autoTable({ startY: y, head: [['Equipment','Availability']], body: availBody, theme: 'grid', styles: {fontSize:9} });
-    y = doc.lastAutoTable.finalY + 35;
-
-    doc.text("FAILURE COUNT BY EQUIPMENT", 40, y);
-    y += 15;
-    const failBody = charts.failures ? charts.failures.data.labels.map((l,i) => [l, charts.failures.data.datasets[0].data[i]]) : [];
-    doc.autoTable({ startY: y, head: [['Equipment','Failures']], body: failBody, theme: 'grid', styles: {fontSize:9} });
-    y = doc.lastAutoTable.finalY + 35;
-
-    doc.text("MEAN TIME TO FAILURE (DAYS)", 40, y);
-    y += 15;
-    const mttfBody = charts.mttf ? charts.mttf.data.labels.map((l,i) => [l, charts.mttf.data.datasets[0].data[i]]) : [];
-    doc.autoTable({ startY: y, head: [['Equipment','MTTF']], body: mttfBody, theme: 'grid', styles: {fontSize:9} });
-    y = doc.lastAutoTable.finalY + 35;
-
-    if (charts.delay) {
-      doc.text("DELAY REASONS (HOURS)", 40, y);
-      y += 15;
-      const delayBody = charts.delay.data.labels.map((l,i) => [l, charts.delay.data.datasets[0].data[i]]);
-      doc.autoTable({ startY: y, head: [['Reason','Hours']], body: delayBody, theme: 'grid', styles: {fontSize:9} });
-    }
-
-    doc.save('RBE_Dashboard_Full_Report.pdf');
+  function populateMaintTable() {
+    const tbody = document.querySelector('#maint-table tbody');
+    tbody.innerHTML = getFilteredMaintenance().map((m,i) => {
+      const days = calculateDaysLeft(m.lastDone, m.interval);
+      const disp = isNaN(days) ? '-' : (days>=0 ? days : Math.abs(days)+' overdue');
+      return `<tr><td>${m.equipment}</td><td>${m.task}</td><td>${m.interval}</td><td>${m.lastDone}</td><td>${calculateNextDue(m.lastDone,m.interval)||'-'}</td><td>${disp}</td><td><button onclick="editMaint(${i})" class="btn btn-primary">Edit</button><button onclick="deleteMaint(${i})" class="btn btn-danger">Delete</button></td></tr>`;
+    }).join('');
   }
 
-  function generateJobPDF() {
-    const id = document.getElementById('job-loco').value;
-    if (!id) return alert('Please select an equipment for the job order.');
-    const hist = up.filter(u => u['Equipment ID'] === id);
-    const status = getStatus(id);
+  function getMaintenanceEvents() {
+    return getFilteredMaintenance().map(task => {
+      if (!task.lastDone) return null;
+      const due = calculateNextDue(task.lastDone, task.interval);
+      const days = calculateDaysLeft(task.lastDone, task.interval);
+      let color = '#16a34a';
+      if (days < 0) color = '#dc2626';
+      else if (days <= 7) color = '#ea580c';
+      return {title: `${task.equipment} - ${task.task}`, start: due, allDay: true, backgroundColor: color, borderColor: color, extendedProps: {daysLeft: days}};
+    }).filter(Boolean);
+  }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text(`Job Order – Equipment ${id}`, 20, 30);
-    doc.setFontSize(11);
-    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 45);
-    doc.text(`Current Status: ${status.status} | Availability: ${status.availability}%`, 20, 60);
-
-    doc.autoTable({
-      startY: 80,
-      head: [['Date','Time','Status','Shift','Reason/Fault','Downtime (hrs)','Failure']],
-      body: hist.map(u => [u.Date, u.Time, u.Status, u.Shift, u['Reason/Fault'], u['Downtime Hours']||0, u['Is Failure?'] === 1 ? 'YES' : 'NO']),
-      theme: 'grid',
-      styles: {fontSize:9}
+  function initCalendar() {
+    const el = document.getElementById('calendar-div');
+    if (calendar) calendar.destroy();
+    const isMobile = window.innerWidth <= 768;
+    calendar = new FullCalendar.Calendar(el, {
+      initialView: isMobile ? 'listWeek' : 'dayGridMonth',
+      headerToolbar: {left:'prev,next today', center:'title', right: isMobile ? 'dayGridMonth,listWeek' : 'dayGridMonth,timeGridWeek,listWeek'},
+      height: 'auto',
+      events: getMaintenanceEvents(),
+      eventContent: arg => ({html: `<div style="padding:4px;">${arg.event.title}<br><small>Days left: ${arg.event.extendedProps.daysLeft}</small></div>`})
     });
-
-    doc.save(`Job_Order_${id}.pdf`);
+    calendar.render();
   }
 
-  function exportOperationsReportPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    let y = 40;
-
-    doc.setFontSize(18);
-    doc.text("Impala Platinum – All Operations Report", 30, y);
-    y += 30;
-    doc.setFontSize(12);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 30, y);
-    y += 30;
-
-    doc.text("OPERATION STATUS", 30, y);
-    y += 15;
-    doc.autoTable({ html: '#op-status-table', startY: y, theme: 'grid' });
-    y = doc.lastAutoTable.finalY + 40;
-
-    doc.text("PROBLEM EQUIPMENT", 30, y);
-    y += 15;
-    doc.autoTable({ html: '#problem-equipment-table', startY: y, theme: 'grid' });
-    y = doc.lastAutoTable.finalY + 40;
-
-    doc.text("HIGH RISK EQUIPMENT", 30, y);
-    y += 15;
-    doc.autoTable({ html: '#high-risk-table', startY: y, theme: 'grid' });
-
-    doc.save('Operations_Report_Full.pdf');
+  function editMaint(i) {
+    const m = mt[i];
+    document.getElementById('edit-index').value = i;
+    document.getElementById('edit-equipment').value = m.equipment;
+    document.getElementById('edit-task').value = m.task;
+    document.getElementById('edit-interval').value = m.interval;
+    document.getElementById('edit-last').value = m.lastDone;
+    document.getElementById('edit-modal').classList.add('active');
   }
 
-  function exportMaintPDF() {
-    const { jsPDF } = window.jspdf;
+  function deleteMaint(i) {
+    if (confirm('Delete this task?')) {
+      mt.splice(i, 1);
+      set('maintenance', mt);
+      populateMaintTable();
+      refreshCurrentView();
+    }
+  }
+
+  // ==================== ALL EXPORT FUNCTIONS (FULLY WORKING) ====================
+  function exportDashboardPDF() {
+    html2canvas(document.getElementById('dashboard'), {scale:2}).then(canvas => {
+      const {jsPDF} = window.jspdf;
+      const doc = new jsPDF('p','mm','a4');
+      const img = canvas.toDataURL('image/png');
+      const w = doc.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      doc.addImage(img, 'PNG', 0, 0, w, h > 280 ? 280 : h);
+      doc.save('RBE_Dashboard.pdf');
+    });
+  }
+
+  function exportSummaryPDF() {
+    html2canvas(document.getElementById('summary'), {scale:2}).then(canvas => {
+      const {jsPDF} = window.jspdf;
+      const doc = new jsPDF('p','mm','a4');
+      const img = canvas.toDataURL('image/png');
+      const w = doc.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      doc.addImage(img, 'PNG', 0, 0, w, h > 280 ? 280 : h);
+      doc.save('Fleet_Summary.pdf');
+    });
+  }
+
+  function exportEquipmentPDF() {
+    const {jsPDF} = window.jspdf;
     const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Maintenance Schedule – Impala Platinum", 30, 40);
-    doc.setFontSize(11);
-    doc.text(`Generated: ${new Date().toLocaleDateString()}`, 30, 55);
-    doc.autoTable({ html: '#maint-table', startY: 75, theme: 'grid', styles: {fontSize:9} });
-    doc.save('Maintenance_Schedule_Full.pdf');
+    doc.text("Equipment Register", 20, 20);
+    const data = getFilteredEquipment().map(e => [e.Shaft, e.Level, e['Loco Size'], e['Loco Number'], e.SECTION]);
+    doc.autoTable({head:[['Shaft','Level','Loco Size','Loco Number','SECTION']], body:data, startY:35});
+    doc.save('Equipment_Register.pdf');
   }
 
   function exportLogCSV() {
-    let csv = 'Date,Time,Equipment ID,Status,Shift,Reason/Fault,Downtime Hours,Is Failure?\n';
-    up.forEach(u => {
-      csv += `${u.Date},${u.Time},${u['Equipment ID']},${u.Status},${u.Shift},"${u['Reason/Fault']}",${u['Downtime Hours'] || 0},${u['Is Failure?'] === 1 ? 'Yes' : 'No'}\n`;
+    let csv = "Date,Time,ID,Status,Shift,Fault,Down Hrs,Failure\n";
+    getFilteredUpdates().forEach(u => {
+      csv += `"${u.Date}","${u.Time}","${u['Equipment ID']}","${u.Status}","${u.Shift}","${u['Reason/Fault']||''}",${u['Downtime Hours']||0},${u['Is Failure?']}\n`;
     });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
+    const blob = new Blob([csv], {type:'text/csv'});
     const link = document.createElement('a');
-    link.href = url;
-    link.download = 'RBE_Status_Log.csv';
+    link.href = URL.createObjectURL(blob);
+    link.download = 'RBE_Full_Log.csv';
     link.click();
   }
 
-  // ─── NEW IMPORT FUNCTIONALITY ─────────────────────────────────────────────
+  function generateJobPDF() {
+    const jobLoco = document.getElementById('job-loco').value;
+    if (!jobLoco) return alert('Select equipment');
+    const equip = eq.find(e => e['Loco Number'] === jobLoco) || {};
+    const history = up.filter(u => u['Equipment ID'] === jobLoco).sort((a,b)=>new Date(b.Date+' '+b.Time)-new Date(a.Date+' '+a.Time));
+    const maint = mt.filter(m => m.equipment === jobLoco);
+    const st = getEquipmentStatus(jobLoco);
+
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text('JOB ORDER - RBE MAINTENANCE', 105, 20, {align:'center'});
+    doc.setFontSize(14);
+    doc.text(`Equipment: ${jobLoco} | Shaft: ${equip.Shaft||'N/A'}`, 20, 35);
+    doc.text(`Status: ${st.status} | Availability: ${st.availability}% | Downtime: ${st.downtime} hrs`, 20, 45);
+
+    let y = 60;
+    doc.setFontSize(13);
+    doc.text('History', 20, y); y += 10;
+    const histData = history.map(u => [u.Date, u.Time, u.Status, u.Shift, u['Reason/Fault']||'', u['Downtime Hours']||0, u['Is Failure?']==='1'?'Yes':'No']);
+    if (histData.length) {
+      doc.autoTable({head:[['Date','Time','Status','Shift','Fault','Down Hrs','Failure']], body:histData, startY:y, styles:{fontSize:8}});
+      y = doc.lastAutoTable.finalY + 15;
+    }
+
+    if (maint.length) {
+      doc.text('Maintenance', 20, y); y += 10;
+      const maintData = maint.map(m => [m.task, m.interval, m.lastDone, calculateNextDue(m.lastDone,m.interval)||'-', calculateDaysLeft(m.lastDone,m.interval)]);
+      doc.autoTable({head:[['Task','Interval','Last Done','Due','Days']], body:maintData, startY:y});
+    }
+
+    doc.save(`Job_Order_${jobLoco}.pdf`);
+  }
+
+  function exportMaintPDF() {
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF();
+    doc.text("Maintenance Schedule", 20, 20);
+    const data = mt.map(m => [m.equipment, m.task, m.interval, m.lastDone, calculateNextDue(m.lastDone,m.interval)||'-', calculateDaysLeft(m.lastDone,m.interval)]);
+    doc.autoTable({head:[['Equipment','Task','Interval','Last Done','Due','Days Left']], body:data, startY:35});
+    doc.save('Maintenance_Schedule.pdf');
+  }
+
+  function exportOperationsReportPDF() {
+    html2canvas(document.getElementById('operations-report'), {scale:2}).then(canvas => {
+      const {jsPDF} = window.jspdf;
+      const doc = new jsPDF('p','mm','a4');
+      const img = canvas.toDataURL('image/png');
+      const w = doc.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      doc.addImage(img, 'PNG', 0, 0, w, h > 280 ? 280 : h);
+      doc.save('Operations_Report.pdf');
+    });
+  }
+
+  // ==================== EXCEL IMPORT (FULL WORKING) ====================
   function handleFileUpload() {
-    const fileInput = document.getElementById('excel-file');
-    if (!fileInput.files.length) return alert('Please select an Excel file (.xlsx)');
-    const file = fileInput.files[0];
+    const file = document.getElementById('excel-file').files[0];
+    if (!file) return alert('Select Excel file');
     const reader = new FileReader();
     reader.onload = function(e) {
       const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      let sheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('breakdown') || n === 'Breakdown Report');
-      if (!sheetName) sheetName = workbook.SheetNames[0];
+      const workbook = XLSX.read(data, {type:'array'});
+      let sheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('breakdown')) || workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+      const jsonRows = XLSX.utils.sheet_to_json(worksheet, {header:1, defval:''});
 
-      let headerIndex = jsonRows.findIndex(row => row.some(cell => typeof cell === 'string' && cell.includes('Operator')));
-      if (headerIndex === -1) headerIndex = 3; // fallback for provided sample
-
+      let headerIndex = jsonRows.findIndex(row => row.some(cell => typeof cell==='string' && cell.toLowerCase().includes('operator'))) || 3;
       const rawHeader = jsonRows[headerIndex];
-      columnHeaders = rawHeader.map(h => (h || '').toString().trim()).filter(Boolean);
-
+      columnHeaders = rawHeader.map(h => (h||'').toString().trim()).filter(Boolean);
       excelData = [];
       for (let i = headerIndex + 1; i < jsonRows.length; i++) {
         const row = jsonRows[i];
-        if (!row || row.every(c => c === '')) continue;
+        if (!row || row.every(c => c==='')) continue;
         let obj = {};
-        rawHeader.forEach((key, j) => {
-          const trimmedKey = (key || '').toString().trim();
-          if (trimmedKey) obj[trimmedKey] = row[j] !== undefined ? row[j] : '';
-        });
+        rawHeader.forEach((key,j) => { if (key) obj[(key||'').toString().trim()] = row[j]!==undefined ? row[j] : ''; });
         excelData.push(obj);
       }
-
-      if (excelData.length === 0) return alert('No data rows found in Breakdown Report sheet.');
-
+      if (!excelData.length) return alert('No data found');
       buildMappingForm();
       document.getElementById('mapping-section').classList.remove('hidden');
-      document.getElementById('preview-section').classList.add('hidden');
     };
     reader.readAsArrayBuffer(file);
   }
@@ -1180,20 +1212,17 @@
   function buildMappingForm() {
     const container = document.getElementById('mapping-form');
     container.innerHTML = '';
-    const mappings = [
+    const maps = [
       {id:'map-date', label:'Date', def:'Date'},
       {id:'map-shift', label:'Shift', def:'Shift'},
       {id:'map-equipment', label:'Equipment ID', def:'Working Place'},
       {id:'map-reason', label:'Reason/Fault', def:'Breakdown / Failure'},
-      {id:'map-downtime', label:'Total Downtime (auto ×24 if days)', def:'Total Downtime'},
-      {id:'map-time', label:'Time (optional)', def:'Time on'}
+      {id:'map-downtime', label:'Downtime Hours', def:'Total Downtime'},
+      {id:'map-time', label:'Time', def:'Time on'}
     ];
-    mappings.forEach(m => {
+    maps.forEach(m => {
       let html = `<div class="form-group"><label>${m.label}</label><select id="${m.id}">`;
-      columnHeaders.forEach(col => {
-        const selected = col === m.def ? ' selected' : '';
-        html += `<option value="${col}"${selected}>${col}</option>`;
-      });
+      columnHeaders.forEach(col => html += `<option value="${col}" ${col===m.def?'selected':''}>${col}</option>`);
       html += '</select></div>';
       container.innerHTML += html;
     });
@@ -1213,23 +1242,15 @@
     excelData.forEach((row, idx) => {
       let dateVal = row[selectedMapping.date] || '';
       let shiftVal = row[selectedMapping.shift] || 'Night';
-      let equipVal = (row[selectedMapping.equipment] || 'Unknown').toString().trim();
-      let reasonVal = (row[selectedMapping.reason] || 'Imported Breakdown').toString().trim();
-      let dtRaw = row[selectedMapping.downtime] || 0;
-      let downtimeHrs = (typeof dtRaw === 'number' ? dtRaw : parseFloat(dtRaw) || 0);
+      let equipVal = (row[selectedMapping.equipment]||'Unknown').toString().trim();
+      let reasonVal = (row[selectedMapping.reason]||'Imported Breakdown').toString().trim();
+      let dtRaw = row[selectedMapping.downtime]||0;
+      let downtimeHrs = (typeof dtRaw==='number' ? dtRaw : parseFloat(dtRaw)||0);
       if (downtimeHrs < 50) downtimeHrs *= 24;
       const action = row['Action Taken/Feedback'] || '';
       const statusVal = (action && action.toString().trim() !== '') ? 'Fixed' : 'Down';
 
-      html += `<tr>
-        <td><input type="checkbox" class="row-select" data-index="${idx}" checked></td>
-        <td>${dateVal}</td>
-        <td>${shiftVal}</td>
-        <td>${equipVal}</td>
-        <td>${reasonVal}</td>
-        <td>${downtimeHrs.toFixed(1)}</td>
-        <td>${statusVal}</td>
-      </tr>`;
+      html += `<tr><td><input type="checkbox" class="row-select" data-index="${idx}" checked></td><td>${dateVal}</td><td>${shiftVal}</td><td>${equipVal}</td><td>${reasonVal}</td><td>${downtimeHrs.toFixed(1)}</td><td>${statusVal}</td></tr>`;
     });
     html += `</tbody></table>`;
     document.getElementById('preview-table').innerHTML = html;
@@ -1242,41 +1263,26 @@
 
   function importSelectedRows() {
     const checked = document.querySelectorAll('.row-select:checked');
-    if (checked.length === 0) return alert('No rows selected.');
-
+    if (!checked.length) return alert('No rows selected');
     let count = 0;
     checked.forEach(chk => {
       const idx = parseInt(chk.dataset.index);
       const row = excelData[idx];
 
-      let dateStr = row[selectedMapping.date] || new Date().toISOString().slice(0,10);
-      let date = dateStr;
-      if (typeof dateStr === 'number') {
-        const excelDate = new Date((dateStr - 25569) * 86400 * 1000);
+      let date = row[selectedMapping.date] || new Date().toISOString().slice(0,10);
+      if (typeof date === 'number') {
+        const excelDate = new Date((date - 25569) * 86400 * 1000);
         date = excelDate.toISOString().slice(0,10);
-      } else if (dateStr.toString().includes('.')) {
-        const parts = dateStr.toString().split('.');
-        if (parts.length === 3) date = `20${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
       }
 
       const shift = row[selectedMapping.shift] || 'Night';
-      let equipment = (row[selectedMapping.equipment] || 'Imported').toString().trim();
-      const reason = (row[selectedMapping.reason] || 'Imported Breakdown').toString().trim();
-
-      let dtRaw = row[selectedMapping.downtime] || 0;
-      let downtimeHrs = (typeof dtRaw === 'number' ? dtRaw : parseFloat(dtRaw) || 0);
+      const equipment = (row[selectedMapping.equipment]||'Imported').toString().trim();
+      const reason = (row[selectedMapping.reason]||'Imported Breakdown').toString().trim();
+      let dtRaw = row[selectedMapping.downtime]||0;
+      let downtimeHrs = (typeof dtRaw==='number' ? dtRaw : parseFloat(dtRaw)||0);
       if (downtimeHrs < 50) downtimeHrs *= 24;
-
-      let timeStr = row[selectedMapping.time] || '00:00';
-      if (typeof timeStr === 'number') {
-        const totalH = timeStr * 24;
-        const hh = Math.floor(totalH);
-        const mm = Math.floor((totalH - hh) * 60);
-        timeStr = `${hh.toString().padStart(2,'0')}:${mm.toString().padStart(2,'0')}`;
-      }
-
-      const action = row['Action Taken/Feedback'] || '';
-      const status = (action && action.toString().trim() !== '') ? 'Fixed' : 'Down';
+      const timeStr = row[selectedMapping.time] || '00:00';
+      const status = (row['Action Taken/Feedback'] && row['Action Taken/Feedback'].toString().trim() !== '') ? 'Fixed' : 'Down';
 
       up.push({
         Date: date,
@@ -1286,16 +1292,14 @@
         Shift: shift,
         'Reason/Fault': reason,
         'Downtime Hours': parseFloat(downtimeHrs.toFixed(2)),
-        'Is Failure?': 1
+        'Is Failure?': '1'
       });
       count++;
     });
 
     set('updates', up);
-    alert(`✅ Successfully imported ${count} breakdown record(s) into RBE system!`);
-    populateDashboard();
-    populateLogTable();
-    populateSummaryTable();
+    alert(`Imported ${count} record(s)!`);
+    refreshCurrentView();
     document.getElementById('preview-section').classList.add('hidden');
     document.getElementById('mapping-section').classList.add('hidden');
   }
@@ -1312,8 +1316,7 @@
     });
     set('equipment', eq);
     fillDatalist();
-    populateDashboard();
-    populateEquipmentTable();
+    refreshCurrentView();
     e.target.reset();
   });
 
@@ -1326,48 +1329,48 @@
       Status: document.getElementById('u-status').value,
       Shift: document.getElementById('u-shift').value,
       'Reason/Fault': document.getElementById('u-reason').value,
-      'Downtime Hours': parseFloat(document.getElementById('u-downtime').value) || 0,
-      'Is Failure?': parseInt(document.getElementById('u-failure').value)
+      'Downtime Hours': parseFloat(document.getElementById('u-downtime').value)||0,
+      'Is Failure?': document.getElementById('u-failure').value
     });
     set('updates', up);
-    populateDashboard();
-    populateLogTable();
-    populateSummaryTable();
+    refreshCurrentView();
     e.target.reset();
   });
 
   document.getElementById('search-form').addEventListener('submit', e => {
     e.preventDefault();
-    searchStatus(document.getElementById('s-loco').value, document.getElementById('s-date').value, document.getElementById('show-all-history').checked);
+    searchStatus(
+      document.getElementById('s-loco').value,
+      document.getElementById('s-date').value,
+      document.getElementById('show-all-history').checked
+    );
   });
 
   document.getElementById('edit-maint-form').addEventListener('submit', e => {
     e.preventDefault();
-    const index = document.getElementById('edit-index').value;
-    mt[index].equipment = document.getElementById('edit-equipment').value;
-    mt[index].task = document.getElementById('edit-task').value;
-    mt[index].interval = document.getElementById('edit-interval').value;
-    mt[index].lastDone = document.getElementById('edit-last').value;
+    const i = document.getElementById('edit-index').value;
+    mt[i].equipment = document.getElementById('edit-equipment').value;
+    mt[i].task = document.getElementById('edit-task').value;
+    mt[i].interval = document.getElementById('edit-interval').value;
+    mt[i].lastDone = document.getElementById('edit-last').value;
     set('maintenance', mt);
     populateMaintTable();
-    populateDashboard();
-    initCalendar();
+    refreshCurrentView();
     document.getElementById('edit-modal').classList.remove('active');
   });
 
   document.getElementById('add-maint-form').addEventListener('submit', e => {
     e.preventDefault();
-    const form = e.target;
+    const f = e.target;
     mt.push({
-      equipment: form[0].value,
-      task: form[1].value,
-      interval: form[2].value,
-      lastDone: form[3].value
+      equipment: f[0].value,
+      task: f[1].value,
+      interval: f[2].value,
+      lastDone: f[3].value
     });
     set('maintenance', mt);
     populateMaintTable();
-    populateDashboard();
-    initCalendar();
+    refreshCurrentView();
     document.getElementById('add-maint-modal').classList.remove('active');
   });
 
@@ -1378,27 +1381,59 @@
     });
   });
 
-  // Initial load
+  // INITIAL LOAD – ENHANCED SAMPLE DATA FOR REAL GRAPH CALCULATIONS
   eq = get('equipment');
   up = get('updates');
   mt = get('maintenance');
-  delaysData = get('delays');
+  delaysData = get('delays') || [];
 
   if (!eq.length) {
-    eq = [{Shaft:'1 Shaft',Level:'14 Level','Loco Size':'10t Loco','Loco Number':'364',SECTION:'1245'},{Shaft:'CLAPHAM',Level:'15 Level','Loco Size':'8t Loco','Loco Number':'217',SECTION:'5678'},{Shaft:'North Decline',Level:'20 Level','Loco Size':'12t Loco','Loco Number':'412',SECTION:'8901'},{Shaft:'1 Shaft',Level:'16 Level','Loco Size':'10t Loco','Loco Number':'444',SECTION:'2234'},{Shaft:'1 Shaft',Level:'17 Level','Loco Size':'10t Loco','Loco Number':'155',SECTION:'3345'},{Shaft:'1 Shaft',Level:'18 Level','Loco Size':'10t Loco','Loco Number':'158',SECTION:'4456'},{Shaft:'1 Shaft',Level:'19 Level','Loco Size':'10t Loco','Loco Number':'15',SECTION:'5567'},{Shaft:'1 Shaft',Level:'20 Level','Loco Size':'10t Loco','Loco Number':'270',SECTION:'6678'}];
+    eq = [
+      {Shaft:'1 Shaft',Level:'14 Level','Loco Size':'10t Loco','Loco Number':'364',SECTION:'1245'},
+      {Shaft:'CLAPHAM',Level:'15 Level','Loco Size':'8t Loco','Loco Number':'217',SECTION:'5678'},
+      {Shaft:'1 Shaft',Level:'17 Level','Loco Size':'10t Loco','Loco Number':'155',SECTION:'3345'},
+      {Shaft:'1 Shaft',Level:'20 Level','Loco Size':'10t Loco','Loco Number':'270',SECTION:'6678'}
+    ];
     set('equipment', eq);
   }
+
   if (!up.length) {
-    up = [{ Date: '2025-11-05', Time: '07:30', 'Equipment ID': '364', Status: 'Fixed', Shift: 'Morning', 'Reason/Fault': 'Brake pads replaced', 'Downtime Hours': 3.5, 'Is Failure?': 1 },{ Date: '2025-11-04', Time: '14:20', 'Equipment ID': '217', Status: 'Down', Shift: 'Afternoon', 'Reason/Fault': 'Hydraulic leak', 'Downtime Hours': 8, 'Is Failure?': 1 },{ Date: '2025-11-10', Time: '09:00', 'Equipment ID': '15', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'BRAKES', 'Downtime Hours': 384, 'Is Failure?': 1 },{ Date: '2025-11-10', Time: '10:00', 'Equipment ID': '270', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'Not Starting', 'Downtime Hours': 0, 'Is Failure?': 1 },{ Date: '2025-11-10', Time: '11:00', 'Equipment ID': '155', Status: 'Down', Shift: 'Morning', 'Reason/Fault': 'BRAKES FAILURE', 'Downtime Hours': 0, 'Is Failure?': 1 }];
+    up = [
+      // 364 – 3 failures
+      {Date:'2025-09-15',Time:'09:00','Equipment ID':'364',Status:'Down',Shift:'Morning','Reason/Fault':'Brake failure','Downtime Hours':5.5,'Is Failure?':'1'},
+      {Date:'2025-09-20',Time:'14:30','Equipment ID':'364',Status:'Fixed',Shift:'Afternoon','Reason/Fault':'Brakes repaired','Downtime Hours':5.5,'Is Failure?':'0'},
+      {Date:'2025-10-10',Time:'11:00','Equipment ID':'364',Status:'Down',Shift:'Morning','Reason/Fault':'Engine overheating','Downtime Hours':12,'Is Failure?':'1'},
+      {Date:'2025-10-12',Time:'08:00','Equipment ID':'364',Status:'Fixed',Shift:'Morning','Reason/Fault':'Coolant added','Downtime Hours':2,'Is Failure?':'0'},
+      {Date:'2025-11-05',Time:'07:30','Equipment ID':'364',Status:'Fixed',Shift:'Morning','Reason/Fault':'Brake pads replaced','Downtime Hours':3.5,'Is Failure?':'1'},
+
+      // 217 – 2 failures
+      {Date:'2025-10-05',Time:'13:00','Equipment ID':'217',Status:'Down',Shift:'Afternoon','Reason/Fault':'Hydraulic leak','Downtime Hours':8,'Is Failure?':'1'},
+      {Date:'2025-10-06',Time:'10:00','Equipment ID':'217',Status:'Fixed',Shift:'Morning','Reason/Fault':'Seals replaced','Downtime Hours':21,'Is Failure?':'0'},
+      {Date:'2025-11-04',Time:'14:20','Equipment ID':'217',Status:'Down',Shift:'Afternoon','Reason/Fault':'Hydraulic leak','Downtime Hours':8,'Is Failure?':'1'},
+
+      // 155 – 4 failures (realistic spread, low MTTF)
+      {Date:'2025-10-20',Time:'06:00','Equipment ID':'155',Status:'Down',Shift:'Night','Reason/Fault':'BRAKES','Downtime Hours':12,'Is Failure?':'1'},
+      {Date:'2025-10-22',Time:'06:00','Equipment ID':'155',Status:'Fixed',Shift:'Night','Reason/Fault':'Brake shoes replaced','Downtime Hours':12,'Is Failure?':'0'},
+      {Date:'2025-11-01',Time:'09:00','Equipment ID':'155',Status:'Down',Shift:'Morning','Reason/Fault':'Motor fault','Downtime Hours':24,'Is Failure?':'1'},
+      {Date:'2025-11-02',Time:'09:00','Equipment ID':'155',Status:'Fixed',Shift:'Morning','Reason/Fault':'Repaired','Downtime Hours':24,'Is Failure?':'0'},
+      {Date:'2025-11-07',Time:'10:00','Equipment ID':'155',Status:'Down',Shift:'Morning','Reason/Fault':'BRAKES again','Downtime Hours':12,'Is Failure?':'1'},
+      {Date:'2025-11-10',Time:'09:00','Equipment ID':'155',Status:'Down',Shift:'Morning','Reason/Fault':'BRAKES','Downtime Hours':8,'Is Failure?':'1'},
+
+      // 270 – 2 failures
+      {Date:'2025-10-25',Time:'15:00','Equipment ID':'270',Status:'Down',Shift:'Afternoon','Reason/Fault':'Not Starting','Downtime Hours':4,'Is Failure?':'1'},
+      {Date:'2025-10-26',Time:'09:00','Equipment ID':'270',Status:'Fixed',Shift:'Morning','Reason/Fault':'Battery replaced','Downtime Hours':18,'Is Failure?':'0'},
+      {Date:'2025-11-10',Time:'10:00','Equipment ID':'270',Status:'Down',Shift:'Morning','Reason/Fault':'Not Starting','Downtime Hours':0,'Is Failure?':'1'}
+    ];
     set('updates', up);
   }
+
   if (!mt.length) {
-    mt = [{equipment:'364',task:'Oil Change',interval:'monthly',lastDone:'2025-05-01'},{equipment:'444',task:'Brake Inspection',interval:'weekly',lastDone:'2025-05-20'},{equipment:'217',task:'Service',interval:'weekly',lastDone:'2025-11-08'},{equipment:'155',task:'REPLACE BRAKE SHOES',interval:'weekly',lastDone:'2025-11-07'},{equipment:'158',task:'CHANGE OIL',interval:'weekly',lastDone:'2025-11-07'}];
+    mt = [
+      {equipment:'364',task:'Oil Change',interval:'monthly',lastDone:'2025-10-01'},
+      {equipment:'155',task:'REPLACE BRAKE SHOES',interval:'weekly',lastDone:'2025-11-07'},
+      {equipment:'217',task:'Service',interval:'weekly',lastDone:'2025-11-08'}
+    ];
     set('maintenance', mt);
-  }
-  if (!delaysData.length) {
-    delaysData = [{ equipment: '364', reason: 'Awaiting Spares', hours: 8, date: '2025-11-04' },{ equipment: '217', reason: 'Safety Stand-down', hours: 4, date: '2025-11-05' }];
-    set('delays', delaysData);
   }
 
   if (localStorage.getItem('theme') === 'dark') {
