@@ -522,10 +522,10 @@
       <section id="add-equipment" class="hidden">
         <div class="header-bar"><h1>Add New Equipment</h1></div>
         <form id="add-eq-form" style="max-width:600px;margin:0 auto;">
-          <div class="form-group"><label>Shaft</label><select id="shaft" required><option value="">Select Shaft</option></select></div>
-          <div class="form-group"><label>Level</label><input id="level" type="text" required></div>
-          <div class="form-group"><label>Loco Size</label><input id="loco-size" type="text" required></div>
-          <div class="form-group"><label>Loco Number</label><input id="loco-number" type="text" required></div>
+          <div class="form-group"><label>Operation</label><select id="shaft" required><option value="">Select Shaft</option></select></div>
+          <div class="form-group"><label>Work Place</label><input id="level" type="text" required></div>
+          <div class="form-group"><label>Equipment Size</label><input id="loco-size" type="text" required></div>
+          <div class="form-group"><label>Equipment ID</label><input id="loco-number" type="text" required></div>
           <div class="form-group"><label>SECTION</label><input id="section" type="text" required></div>
           <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;">Add Equipment</button>
         </form>
@@ -606,7 +606,7 @@
         </div>
         <div style="overflow-x:auto;">
           <table id="equipment-table">
-            <thead><tr><th>Shaft</th><th>Level</th><th>Loco Size</th><th>Loco Number</th><th>SECTION</th></tr></thead>
+            <thead><tr><th>Operation</th><th>Work Place</th><th>Equipment Size</th><th>Equipment ID</th><th>SECTION</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -1476,3 +1476,4 @@
 </script>
 </body>
 </html>
+
