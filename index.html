@@ -3,20 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Impala Platinum – RBE Equipment Monitor</title>
+  <title>RBE Equipment Monitor – Impala Platinum</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css" rel='stylesheet' />
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+  <!-- Firebase v9 modular SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, addDoc, setDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    window.firebaseModules = {
+      initializeApp, getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup,
+      getFirestore, collection, onSnapshot, addDoc, setDoc, doc, serverTimestamp, query, orderBy
+    };
+  </script>
 
   <style>
     :root {
@@ -37,8 +48,6 @@
       --radius-lg: 14px;
       --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
       --shadow:    0 4px 14px -2px rgba(0,0,0,0.09);
-      --shadow-lg: 0 10px 28px -5px rgba(0,0,0,0.13);
-      --sidebar-width: 280px;
     }
 
     [data-theme="dark"] {
@@ -57,72 +66,85 @@
     [data-theme="dark"] body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
 
     .wrapper { display:flex; min-height:100vh; }
-    .sidebar { width:var(--sidebar-width); background:#1e293b; color:#f8fafc; z-index:1000; overflow-y:auto; box-shadow:4px 0 25px rgba(0,0,0,0.25); flex-shrink:0; transition:transform 0.35s cubic-bezier(0.4,0,0.2,1); }
-    .sidebar-header { padding:1.25rem 1.1rem; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; }
-    .logo-img { max-width:138px; border-radius:8px; }
-    #sidebar-menu { list-style:none; padding:0.8rem 0.5rem; }
-    #sidebar-menu li { padding:0.9rem 1.15rem; margin:0.3rem 0; border-radius:8px; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:12px; color:#e2e8f0; transition:all 0.2s; }
-    #sidebar-menu li i { font-size:1.3rem; width:24px; }
-    #sidebar-menu li:hover, #sidebar-menu li.active { background:#334155; color:white; transform:translateX(4px); }
-    .hamburger { position:fixed; top:14px; left:14px; z-index:1101; width:46px; height:46px; background:#1d4ed8; color:white; border:none; border-radius:50%; font-size:1.45rem; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(29,78,216,0.4); cursor:pointer; }
-    .main { flex:1; padding:1rem; overflow-y:auto; background:var(--bg); }
+    .sidebar { width:280px; background:#1e293b; color:#f8fafc; overflow-y:auto; box-shadow:4px 0 25px rgba(0,0,0,0.3); transition: transform 0.4s; position: fixed; height:100%; z-index:1000; }
+    .sidebar-header { padding:1.4rem 1.2rem; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; }
+    .logo-img { max-width:140px; border-radius:10px; }
+    #sidebar-menu { list-style:none; padding:1rem 0.6rem; }
+    #sidebar-menu li { padding:1rem 1.3rem; margin:0.4rem 0; border-radius:10px; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:14px; color:#e2e8f0; transition:all 0.25s; }
+    #sidebar-menu li:hover, #sidebar-menu li.active { background:#334155; color:white; transform:translateX(5px); }
+    .hamburger { position:fixed; top:16px; left:16px; z-index:1101; width:48px; height:48px; background:var(--primary); color:white; border:none; border-radius:50%; font-size:1.5rem; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(29,78,216,0.5); cursor:pointer; }
+    .main { flex:1; padding:1.2rem; margin-left:280px; overflow-y:auto; }
     .container { max-width:1800px; margin:0 auto; }
-    .header-bar { background:linear-gradient(135deg, #1d4ed8, #3b82f6); color:white; padding:1.1rem 1.3rem; border-radius:var(--radius-lg) var(--radius-lg) 0 0; margin:-1rem -1rem 1.25rem; display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; align-items:center; box-shadow:var(--shadow); }
-    .header-bar h1 { font-size: clamp(1.35rem, 4.5vw, 1.75rem); font-weight:700; letter-spacing:-0.025em; }
-    h2 { font-size: clamp(1.18rem, 3.8vw, 1.35rem); font-weight:700; color:var(--primary); margin-bottom:1rem; }
-    .card { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:1.25rem; margin-bottom:1.25rem; border:1px solid var(--border); }
-    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(155px, 1fr)); gap:1rem; margin:1.25rem 0; }
-    .kpi-card { background:linear-gradient(145deg, #ffffff, #f8fafc); border-radius:var(--radius-lg); padding:1.35rem 1rem; text-align:center; box-shadow:var(--shadow); border:1px solid var(--border); transition:transform 0.3s; }
-    .kpi-card:hover { transform:translateY(-5px); }
-    .kpi-card.green  h2 { color:#16a34a; }
-    .kpi-card.orange h2 { color:#ea580c; }
-    .kpi-card.red    h2 { color:#dc2626; }
-    table { width:100%; border-collapse:separate; border-spacing:0; margin:1rem 0; background:var(--surface); }
+    .header-bar { background:linear-gradient(135deg, var(--primary), #3b82f6); color:white; padding:1.3rem 1.6rem; border-radius:var(--radius-lg) var(--radius-lg) 0 0; margin:-1.2rem -1.2rem 1.4rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; box-shadow:var(--shadow); }
+    h1 { font-size: clamp(1.4rem, 4.2vw, 1.8rem); font-weight:700; }
+    h2 { font-size: clamp(1.2rem, 3.6vw, 1.4rem); font-weight:700; color:var(--primary); margin:0 0 1.1rem; }
+    .card { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:1.4rem; margin-bottom:1.4rem; border:1px solid var(--border); }
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:1.2rem; margin:1.4rem 0; }
+    .kpi-card { background:linear-gradient(145deg, #fff, #f8fafc); border-radius:var(--radius-lg); padding:1.5rem 1.2rem; text-align:center; box-shadow:var(--shadow); transition:transform 0.3s; border:1px solid var(--border); }
+    [data-theme="dark"] .kpi-card { background:linear-gradient(145deg, #1e293b, #334155); }
+    .kpi-card:hover { transform:translateY(-6px); }
+    .kpi-card h2 { font-size: clamp(2rem, 6vw, 2.6rem); font-weight:800; margin:0.2rem 0; }
+    .kpi-card.green  h2 { color:var(--success); }
+    .kpi-card.orange h2 { color:var(--warning); }
+    .kpi-card.red    h2 { color:var(--danger); }
+    .kpi-card.blue   h2 { color:var(--primary); }
+    .chart-wrapper { background:var(--surface); border-radius:var(--radius-lg); padding:1.4rem; box-shadow:var(--shadow); border:1px solid var(--border); }
+    .chart-title { font-weight:700; color:var(--primary); margin-bottom:1.1rem; font-size:1.25rem; display:flex; align-items:center; gap:10px; }
+    .chart-container { position:relative; height: clamp(280px, 45vh, 400px); }
+    table { width:100%; border-collapse:collapse; margin:1.2rem 0; font-size:0.95rem; }
     th, td { padding:12px 10px; text-align:left; border-bottom:1px solid var(--border); }
     th { background:#0f172a; color:white; font-weight:600; position:sticky; top:0; z-index:2; }
     [data-theme="dark"] th { background:#1e293b; }
-    tbody tr:nth-child(even) { background:var(--surface-2); }
     tr:hover { background:rgba(29,78,216,0.08); }
-    .btn { padding:0.7rem 1.4rem; border:none; border-radius:8px; font-weight:600; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; }
-    .btn-primary { background:var(--primary); color:white; }
+    .btn { padding:0.8rem 1.6rem; border:none; border-radius:var(--radius-md); font-weight:600; cursor:pointer; transition:all 0.25s; display:inline-flex; align-items:center; gap:10px; }
+    .btn-primary   { background:var(--primary); color:white; }
     .btn-primary:hover { background:var(--primary-600); }
-    .alert-banner { padding:1.1rem 1.5rem; border-radius:12px; margin:1.25rem 0; border-left:6px solid; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-    .alert-high-risk { border-color:var(--danger); background:rgba(220,38,38,0.08); color:#991b1b; }
-    .alert-predictive { border-color:var(--warning); background:rgba(234,88,12,0.08); color:#9a3412; }
-    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); align-items:center; justify-content:center; z-index:2000; padding:1rem; }
+    .btn-success   { background:var(--success); color:white; }
+    .btn-danger    { background:var(--danger); color:white; }
+    .alert-banner { padding:1.2rem 1.6rem; border-radius:var(--radius-lg); margin:1.4rem 0; border-left:6px solid; box-shadow:var(--shadow-sm); }
+    .alert-high-risk { border-color:var(--danger); background:rgba(220,38,38,0.07); }
+    .alert-predictive { border-color:var(--warning); background:rgba(234,88,12,0.07); }
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); align-items:center; justify-content:center; z-index:2000; padding:1rem; }
     .modal.active { display:flex; }
-    .modal-content { background:var(--surface); border-radius:12px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto; padding:1.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.25); }
-    .form-group { margin-bottom:1.2rem; }
-    label { display:block; font-weight:600; margin-bottom:0.45rem; color:var(--text-2); }
-    input, select, textarea { width:100%; padding:0.75rem 1rem; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); font-size:0.95rem; }
-    input:focus, select:focus, textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(29,78,216,0.15); }
+    .modal-content { background:var(--surface); border-radius:var(--radius-lg); width:100%; max-width:560px; max-height:90vh; overflow-y:auto; box-shadow:var(--shadow); padding:1.6rem; }
+    .form-group { margin-bottom:1.3rem; }
+    label { display:block; font-weight:600; margin-bottom:0.5rem; color:var(--text-2); }
+    input, select, textarea { width:100%; padding:0.8rem 1.1rem; border:1px solid var(--border); border-radius:var(--radius-md); font-size:0.97rem; background:var(--surface-2); }
+    input:focus, select:focus, textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 4px rgba(29,78,216,0.18); }
+    .live-indicator { position:fixed; bottom:20px; right:20px; background:var(--success); color:white; padding:0.6rem 1.3rem; border-radius:999px; font-weight:600; box-shadow:0 4px 20px rgba(22,163,74,0.45); z-index:999; display:flex; align-items:center; gap:8px; }
     .hidden { display:none !important; }
-    #auth-section { max-width:420px; margin:4rem auto; padding:2.5rem 2rem; background:var(--surface); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.15); }
-    #logout-btn { position:fixed; top:14px; right:14px; z-index:1102; padding:0.6rem 1.2rem; background:var(--danger); color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer; box-shadow:0 4px 14px rgba(220,38,38,0.4); }
-    .live-indicator { position:fixed; bottom:16px; right:16px; background:#16a34a; color:white; padding:0.55rem 1.1rem; border-radius:999px; font-weight:600; font-size:0.86rem; box-shadow:0 4px 16px rgba(22,163,74,0.4); z-index:999; display:flex; align-items:center; gap:6px; }
+    #auth-section { max-width:460px; margin:5rem auto; padding:2.8rem 2.2rem; background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); }
+    #logout-btn { position:fixed; top:16px; right:16px; z-index:1102; padding:0.7rem 1.4rem; background:var(--danger); color:white; border:none; border-radius:10px; font-weight:600; cursor:pointer; box-shadow:0 4px 16px rgba(220,38,38,0.45); }
+
+    @media (max-width: 1024px) {
+      .sidebar { transform: translateX(-100%); width:80vw; max-width:320px; }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left:0; padding-top:80px; }
+      .hamburger { display:block; }
+    }
   </style>
 </head>
 <body>
 
-<!-- Authentication -->
-<div id="auth-section">
+<!-- ── Auth ──────────────────────────────────────────────── -->
+<div id="auth-section" class="card">
   <h2 id="auth-title">Sign In</h2>
   <form id="auth-form">
     <div class="form-group"><label>Email</label><input id="email" type="email" required autocomplete="email"></div>
     <div class="form-group"><label>Password</label><input id="password" type="password" required autocomplete="current-password"></div>
-    <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;" id="auth-submit">Sign In</button>
+    <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1.2rem;">Sign In</button>
   </form>
-  <p style="margin-top:1.2rem;text-align:center;">
-    <a href="#" id="toggle-auth" style="color:var(--primary);font-weight:500;">Create an account</a>
+  <p style="margin-top:1.4rem;text-align:center;">
+    <a href="#" id="toggle-auth-link" style="color:var(--primary);font-weight:600;">Create account</a>
   </p>
-  <p id="auth-error" style="color:var(--danger);text-align:center;min-height:1.3em;"></p>
+  <p id="auth-message" style="color:var(--danger);text-align:center;margin-top:1.2rem;min-height:1.4em;"></p>
 </div>
 
-<!-- Main Application -->
+<!-- ── Main App ──────────────────────────────────────────────── -->
 <div id="app" class="hidden">
 
   <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
-  <button id="theme-toggle" onclick="toggleTheme()">☀️</button>
+  <button id="theme-toggle" style="position:fixed;top:16px;right:80px;z-index:1101;width:48px;height:48px;background:#64748b;color:white;border:none;border-radius:50%;font-size:1.4rem;box-shadow:0 4px 16px rgba(100,116,139,0.4);">☀️</button>
   <button id="logout-btn">Logout</button>
 
   <div class="wrapper">
@@ -132,94 +154,150 @@
         <button onclick="document.getElementById('sidebar').classList.remove('open')" style="background:none;border:none;color:white;font-size:2.4rem;cursor:pointer;">×</button>
       </div>
       <ul id="sidebar-menu">
-        <li class="active" data-view="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</li>
-        <li data-view="add-equipment"><i class="fas fa-plus-circle"></i> + New Equipment</li>
-        <li data-view="add-status"><i class="fas fa-edit"></i> Log Status Update</li>
-        <li data-view="search-status"><i class="fas fa-search"></i> Search History</li>
-        <li data-view="status-log"><i class="fas fa-list"></i> Full Log</li>
-        <li data-view="summary"><i class="fas fa-chart-bar"></i> Fleet Summary</li>
-        <li data-view="manage-equipment"><i class="fas fa-tools"></i> Equipment Register</li>
-        <li data-view="maintenance-schedule"><i class="fas fa-calendar-check"></i> Maintenance Plan</li>
+        <li class="active" data-section="dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></li>
+        <li data-section="add-equipment"><i class="fas fa-plus-circle"></i><span>+ New Equipment</span></li>
+        <li data-section="add-status"><i class="fas fa-edit"></i><span>Log Status</span></li>
+        <li data-section="search-status"><i class="fas fa-search"></i><span>Search History</span></li>
+        <li data-section="status-log"><i class="fas fa-list"></i><span>Full Log</span></li>
+        <li data-section="summary"><i class="fas fa-chart-bar"></i><span>Fleet Summary</span></li>
+        <li data-section="manage-equipment"><i class="fas fa-tools"></i><span>Equipment Register</span></li>
+        <li data-section="maintenance-schedule"><i class="fas fa-calendar-check"></i><span>Maintenance Plan</span></li>
+        <li data-section="calendar"><i class="fas fa-calendar"></i><span>Calendar</span></li>
       </ul>
     </aside>
 
     <main class="main">
       <div class="container">
 
-        <!-- Dashboard -->
-        <section id="dashboard" class="view-section">
+        <!-- DASHBOARD -->
+        <section id="dashboard">
           <div class="header-bar">
-            <h1>Real-time RBE Monitoring – Platinum Operations</h1>
-            <select id="shaft-filter"><option value="">All Shafts</option></select>
+            <h1>Real-time RBE Monitoring – Platinum</h1>
+            <div style="display:flex;gap:1.2rem;align-items:center;flex-wrap:wrap;">
+              <select id="shaft-filter" onchange="filterDashboard()">
+                <option value="">All Shafts</option>
+              </select>
+              <button class="btn btn-primary" onclick="exportDashboardPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
+            </div>
           </div>
-          <div id="high-risk-alerts" class="alert-banner alert-high-risk hidden"></div>
-          <div id="predictive-alerts" class="alert-banner alert-predictive hidden"></div>
+
+          <div id="high-risk-alerts" class="alert-banner alert-high-risk hidden">
+            <strong><i class="fas fa-triangle-exclamation"></i> High Risk – Long Downtime</strong>
+            <ul id="high-risk-list"></ul>
+          </div>
+
+          <div id="predictive-alerts" class="alert-banner alert-predictive hidden">
+            <strong><i class="fas fa-bell"></i> Predictive Maintenance – Due / Overdue</strong>
+            <ul id="predictive-list"></ul>
+          </div>
+
           <div class="kpi-grid" id="kpi-grid"></div>
-          <div class="card"><h2>Charts placeholder – add Chart.js here</h2></div>
+
+          <div class="card chart-wrapper">
+            <div class="chart-title"><i class="fas fa-chart-bar"></i> Fleet Availability (%)</div>
+            <div class="chart-container"><canvas id="availabilityChart"></canvas></div>
+          </div>
+
+          <div class="card chart-wrapper">
+            <div class="chart-title"><i class="fas fa-exclamation-triangle"></i> Failure Count by Equipment</div>
+            <div class="chart-container"><canvas id="failuresChart"></canvas></div>
+          </div>
+
+          <div class="card chart-wrapper">
+            <div class="chart-title"><i class="fas fa-clock"></i> Mean Time To Failure (Days)</div>
+            <div class="chart-container"><canvas id="mttfChart"></canvas></div>
+          </div>
+
+          <div class="card" style="border-left:6px solid var(--info);">
+            <h2><i class="fas fa-wrench"></i> Upcoming & Overdue Maintenance</h2>
+            <div id="maintenance-list" style="display:grid;gap:1.1rem;"></div>
+          </div>
         </section>
 
-        <!-- Add Equipment -->
-        <section id="add-equipment" class="view-section hidden">
+        <!-- ADD EQUIPMENT -->
+        <section id="add-equipment" class="hidden">
           <div class="header-bar"><h1>Add New Equipment</h1></div>
-          <form id="add-equipment-form" style="max-width:600px;margin:2rem auto;">
-            <div class="form-group"><label>Shaft</label><select id="eq-shaft" required></select></div>
-            <div class="form-group"><label>Level / Work Place</label><input id="eq-level" required></div>
-            <div class="form-group"><label>Equipment Size</label><input id="eq-size" required></div>
-            <div class="form-group"><label>Equipment ID (Loco #)</label><input id="eq-id" required></div>
-            <div class="form-group"><label>Section</label><input id="eq-section" required></div>
-            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1.5rem;">Save Equipment</button>
+          <form id="add-eq-form" style="max-width:640px;margin:0 auto;">
+            <div class="form-group"><label>Shaft</label><select id="shaft" required><option value="">Select...</option></select></div>
+            <div class="form-group"><label>Work Place / Level</label><input id="level" type="text" required></div>
+            <div class="form-group"><label>Equipment Size</label><input id="loco-size" type="text" required></div>
+            <div class="form-group"><label>Equipment ID (Loco #)</label><input id="loco-number" type="text" required></div>
+            <div class="form-group"><label>Section</label><input id="section" type="text" required></div>
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1.6rem;">Add Equipment</button>
           </form>
         </section>
 
-        <!-- Log Status Update -->
-        <section id="add-status" class="view-section hidden">
+        <!-- STATUS UPDATE -->
+        <section id="add-status" class="hidden">
           <div class="header-bar"><h1>Log Status Update</h1></div>
-          <form id="add-status-form" style="max-width:600px;margin:2rem auto;">
-            <div class="form-group"><label>Date</label><input type="date" id="upd-date" required></div>
-            <div class="form-group"><label>Time</label><input type="time" id="upd-time" required></div>
-            <div class="form-group"><label>Equipment ID</label><input list="loco-list" id="upd-equipment" required></div>
+          <form id="add-status-form" style="max-width:640px;margin:0 auto;">
+            <div class="form-group"><label>Date</label><input id="u-date" type="date" required></div>
+            <div class="form-group"><label>Time</label><input id="u-time" type="time" required></div>
+            <div class="form-group"><label>Equipment ID</label><input id="u-loco" list="loco-list" required></div>
             <div class="form-group"><label>Status</label>
-              <select id="upd-status" required>
+              <select id="u-status" required>
                 <option value="Down">Down</option>
                 <option value="Fixed">Fixed</option>
               </select>
             </div>
             <div class="form-group"><label>Shift</label>
-              <select id="upd-shift" required>
-                <option>Morning</option><option>Afternoon</option><option>Night</option>
+              <select id="u-shift" required>
+                <option>Morning</option>
+                <option>Afternoon</option>
+                <option>Night</option>
               </select>
             </div>
-            <div class="form-group"><label>Reason / Fault</label><textarea id="upd-reason" rows="3" required></textarea></div>
-            <div class="form-group"><label>Downtime Hours</label><input type="number" step="0.1" min="0" id="upd-downtime" value="0"></div>
-            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1.5rem;">Submit Update</button>
+            <div class="form-group"><label>Reason / Fault</label><textarea id="u-reason" required rows="3"></textarea></div>
+            <div class="form-group"><label>Downtime Hours</label><input id="u-downtime" type="number" step="0.1" min="0" value="0"></div>
+            <div class="form-group"><label>Is Failure?</label>
+              <select id="u-failure">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1.6rem;">Submit</button>
           </form>
         </section>
 
-        <!-- Full Log -->
-        <section id="status-log" class="view-section hidden">
+        <!-- SEARCH HISTORY -->
+        <section id="search-status" class="hidden">
+          <div class="header-bar"><h1>Search Status History</h1></div>
+          <form id="search-form" style="max-width:860px;margin:0 auto;">
+            <div class="form-group"><label>Equipment ID</label><input id="s-loco" list="loco-list"></div>
+            <div class="form-group"><label>Date (optional)</label><input id="s-date" type="date"></div>
+            <div style="margin:1.4rem 0;display:flex;align-items:center;gap:12px;">
+              <input type="checkbox" id="show-all-history">
+              <label for="show-all-history" style="margin:0;font-weight:500;">Show full history</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
+          </form>
+          <div id="search-results" style="margin-top:2.2rem;"></div>
+        </section>
+
+        <!-- FULL LOG -->
+        <section id="status-log" class="hidden">
           <div class="header-bar">
             <h1>Full Status Log</h1>
+            <button class="btn btn-primary" onclick="exportLogCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>
           </div>
           <div style="overflow-x:auto;">
-            <table id="full-log-table">
-              <thead>
-                <tr>
-                  <th>Date</th><th>Time</th><th>Equipment</th><th>Status</th><th>Shift</th><th>Reason</th><th>Down Hrs</th>
-                </tr>
-              </thead>
+            <table id="log-table">
+              <thead><tr><th>Date</th><th>Time</th><th>ID</th><th>Status</th><th>Shift</th><th>Fault</th><th>Down Hrs</th><th>Failure</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
         </section>
 
-        <!-- Fleet Summary -->
-        <section id="summary" class="view-section hidden">
-          <div class="header-bar"><h1>Fleet Summary</h1></div>
+        <!-- FLEET SUMMARY -->
+        <section id="summary" class="hidden">
+          <div class="header-bar">
+            <h1>Fleet Summary & Analytics</h1>
+          </div>
           <div style="overflow-x:auto;">
             <table id="summary-table">
               <thead>
                 <tr>
-                  <th>ID</th><th>Shaft</th><th>Level</th><th>Size</th><th>Section</th><th>Last Status</th><th>Last Update</th>
+                  <th>ID</th><th>Updates</th><th>Total Days</th><th>Down Days</th><th>Op Days</th><th>Failures</th><th>MTTF</th><th>Avail %</th><th>Last Update</th><th>Status</th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -227,47 +305,52 @@
           </div>
         </section>
 
-        <!-- Equipment Register -->
-        <section id="manage-equipment" class="view-section hidden">
+        <!-- EQUIPMENT REGISTER -->
+        <section id="manage-equipment" class="hidden">
           <div class="header-bar"><h1>Equipment Register</h1></div>
           <div style="overflow-x:auto;">
             <table id="equipment-table">
-              <thead>
-                <tr><th>Shaft</th><th>Level</th><th>Size</th><th>ID</th><th>Section</th></tr>
-              </thead>
+              <thead><tr><th>Shaft</th><th>Level</th><th>Size</th><th>ID</th><th>Section</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
         </section>
 
-        <!-- Maintenance Schedule -->
-        <section id="maintenance-schedule" class="view-section hidden">
+        <!-- MAINTENANCE SCHEDULE -->
+        <section id="maintenance-schedule" class="hidden">
           <div class="header-bar">
-            <h1>Maintenance Plan</h1>
-            <button class="btn btn-primary" onclick="document.getElementById('maint-modal').classList.add('active')">+ Add Task</button>
+            <h1>Maintenance Schedule</h1>
+            <button class="btn btn-primary" onclick="document.getElementById('add-maint-modal').classList.add('active')">+ Add Task</button>
           </div>
           <div style="overflow-x:auto;">
-            <table id="maintenance-table">
-              <thead>
-                <tr><th>Equipment</th><th>Task</th><th>Interval</th><th>Last Done</th></tr>
-              </thead>
+            <table id="maint-table">
+              <thead><tr><th>Equipment</th><th>Task</th><th>Interval</th><th>Last Done</th><th>Due</th><th>Days Left</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
+        </section>
+
+        <!-- CALENDAR -->
+        <section id="calendar" class="hidden">
+          <div class="header-bar"><h1>Maintenance Calendar</h1></div>
+          <div id="calendar-div" style="background:var(--surface);padding:2rem;border-radius:var(--radius-lg);box-shadow:var(--shadow);border:1px solid var(--border);"></div>
         </section>
 
       </div>
     </main>
   </div>
 
-  <div class="live-indicator"><i class="fas fa-circle" style="font-size:0.7rem;"></i> LIVE</div>
+  <div class="live-indicator"><i class="fas fa-circle" style="font-size:0.8rem;"></i> LIVE • synced</div>
 
   <datalist id="loco-list"></datalist>
 
-  <!-- Maintenance Modal -->
-  <div id="maint-modal" class="modal">
+  <!-- Maintenance Add Modal -->
+  <div id="add-maint-modal" class="modal">
     <div class="modal-content">
-      <h3>Add Maintenance Task</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.3rem;">
+        <h3>Add Maintenance Task</h3>
+        <button onclick="document.getElementById('add-maint-modal').classList.remove('active')" style="background:none;border:none;font-size:2.2rem;cursor:pointer;">×</button>
+      </div>
       <form id="add-maint-form">
         <div class="form-group"><label>Equipment ID</label><input list="loco-list" required></div>
         <div class="form-group"><label>Task</label><input type="text" required></div>
@@ -279,22 +362,18 @@
           </select>
         </div>
         <div class="form-group"><label>Last Done</label><input type="date" required></div>
-        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;">Add Task</button>
+        <button type="submit" class="btn btn-primary" style="width:100%;">Add Task</button>
       </form>
-      <button onclick="document.getElementById('maint-modal').classList.remove('active')" style="margin-top:1rem;color:var(--danger);">Cancel</button>
     </div>
   </div>
 
 </div>
 
 <script type="module">
-  // ────────────────────────────────────────────────
-  // Firebase v10 Modular
-  // ────────────────────────────────────────────────
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-  import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+  const { initializeApp, getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup,
+         getFirestore, collection, onSnapshot, addDoc, setDoc, doc, serverTimestamp, query, orderBy } = window.firebaseModules;
 
+  // ── Firebase Config ────────────────────────────────────────
   const firebaseConfig = {
     apiKey: "AIzaSyCnDsQVhQxk9Q7axCPcMSpHDcqOonBbNMc",
     authDomain: "rbe-equipment.firebaseapp.com",
@@ -305,52 +384,52 @@
     measurementId: "G-15E0HZJ2X6"
   };
 
-  const app = initializeApp(firebaseConfig);
+  const app  = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = getFirestore(app);
+  const db   = getFirestore(app);
 
-  let equipment = [];
-  let updates = [];
-  let maintenance = [];
+  // ── Global State ───────────────────────────────────────────
+  let equipment     = [];
+  let updates       = [];
+  let maintenance   = [];
+  let charts        = {};
+  let currentFilter = '';
 
-  // ── Auth UI ─────────────────────────────────────────────────────
   const authSection = document.getElementById('auth-section');
-  const appDiv = document.getElementById('app');
-  const authForm = document.getElementById('auth-form');
-  const authTitle = document.getElementById('auth-title');
-  const authSubmit = document.getElementById('auth-submit');
-  const toggleLink = document.getElementById('toggle-auth');
-  const authError = document.getElementById('auth-error');
+  const appDiv      = document.getElementById('app');
+  const authForm    = document.getElementById('auth-form');
+  const authTitle   = document.getElementById('auth-title');
+  const toggleLink  = document.getElementById('toggle-auth-link');
+  const authMsg     = document.getElementById('auth-message');
 
-  let isLoginMode = true;
+  let isLogin = true;
 
   toggleLink.onclick = e => {
     e.preventDefault();
-    isLoginMode = !isLoginMode;
-    authTitle.textContent = isLoginMode ? "Sign In" : "Create Account";
-    authSubmit.textContent = isLoginMode ? "Sign In" : "Register";
-    toggleLink.textContent = isLoginMode ? "Create an account" : "Already have an account? Sign in";
+    isLogin = !isLogin;
+    authTitle.textContent = isLogin ? 'Sign In' : 'Create Account';
+    authForm.querySelector('button').textContent = isLogin ? 'Sign In' : 'Register';
+    toggleLink.textContent = isLogin ? 'Create an account' : 'Already have account? Sign in';
   };
 
   authForm.onsubmit = async e => {
     e.preventDefault();
     const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    authError.textContent = "";
+    const pass  = document.getElementById('password').value;
+    authMsg.textContent = '';
 
     try {
-      if (isLoginMode) {
-        await signInWithEmailAndPassword(auth, email, password);
+      if (isLogin) {
+        await signInWithEmailAndPassword(auth, email, pass);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        await createUserWithEmailAndPassword(auth, email, pass);
       }
     } catch (err) {
       let msg = err.message;
-      if (msg.includes('wrong-password')) msg = 'Wrong password';
-      else if (msg.includes('user-not-found')) msg = 'Account not found';
-      else if (msg.includes('email-already-in-use')) msg = 'Email already in use';
-      else msg = err.message;
-      authError.textContent = msg;
+      if (msg.includes('wrong-password'))      msg = 'Incorrect password';
+      if (msg.includes('user-not-found'))      msg = 'No account with this email';
+      if (msg.includes('email-already-in-use')) msg = 'Email already registered';
+      authMsg.textContent = msg;
     }
   };
 
@@ -360,140 +439,102 @@
     if (user) {
       authSection.classList.add('hidden');
       appDiv.classList.remove('hidden');
-      startRealtimeListeners();
+      startRealtime();
     } else {
       authSection.classList.remove('hidden');
       appDiv.classList.add('hidden');
     }
   });
 
-  // ── Real-time listeners ─────────────────────────────────────────
-  function startRealtimeListeners() {
+  // ── Real-time Listeners ────────────────────────────────────
+  function startRealtime() {
+    // Equipment
     onSnapshot(collection(db, "equipment"), snap => {
       equipment = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      fillDatalist();
-      fillShaftSelect();
-      renderCurrentView();
+      fillDatalistAndSelects();
+      refreshActiveView();
     });
 
-    onSnapshot(query(collection(db, "status_updates"), orderBy("date","desc"), orderBy("time","desc")), snap => {
+    // Status updates – newest first
+    const q = query(collection(db, "status_updates"), orderBy("date", "desc"), orderBy("time", "desc"));
+    onSnapshot(q, snap => {
       updates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderCurrentView();
+      refreshActiveView();
     });
 
-    onSnapshot(collection(db, "maintenance"), snap => {
+    // Maintenance
+    onSnapshot(collection(db, "maintenance_tasks"), snap => {
       maintenance = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderCurrentView();
+      refreshActiveView();
     });
   }
 
-  function fillDatalist() {
-    document.getElementById('loco-list').innerHTML = equipment.map(e => `<option value="${e.id}">${e.id} (${e.shaft||''})</option>`).join('');
-  }
+  function fillDatalistAndSelects() {
+    const list = document.getElementById('loco-list');
+    list.innerHTML = equipment.map(e => `<option value="${e.id}">${e.id} (${e.shaft||''})</option>`).join('');
 
-  function fillShaftSelect() {
     const shafts = [...new Set(equipment.map(e => e.shaft).filter(Boolean))].sort();
-    const html = shafts.map(s => `<option value="${s}">${s}</option>`).join('');
-    document.getElementById('shaft-filter').innerHTML = '<option value="">All Shafts</option>' + html;
-    document.getElementById('eq-shaft').innerHTML = '<option value="">Select Shaft</option>' + html;
+    const opts = shafts.map(s => `<option value="${s}">${s}</option>`).join('');
+
+    ['shaft-filter', 'shaft'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (sel) {
+        const cur = sel.value;
+        sel.innerHTML = '<option value="">All Shafts</option>' + opts;
+        if (cur && shafts.includes(cur)) sel.value = cur;
+      }
+    });
   }
 
-  // ── Navigation ──────────────────────────────────────────────────
+  // ── Navigation ─────────────────────────────────────────────
   document.querySelectorAll('#sidebar-menu li').forEach(li => {
-    li.addEventListener('click', () => {
-      document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
-      document.getElementById(li.dataset.view).classList.remove('hidden');
-      document.querySelectorAll('#sidebar-menu li').forEach(item => item.classList.remove('active'));
+    li.onclick = () => {
+      const sec = li.dataset.section;
+      document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+      document.getElementById(sec).classList.remove('hidden');
+      document.querySelectorAll('#sidebar-menu li').forEach(l => l.classList.remove('active'));
       li.classList.add('active');
-      if (window.innerWidth < 1025) document.getElementById('sidebar').classList.remove('open');
-      renderCurrentView();
-    });
+      if (window.innerWidth <= 1024) document.getElementById('sidebar').classList.remove('open');
+      refreshActiveView();
+    };
   });
 
-  function renderCurrentView() {
-    const current = document.querySelector('.view-section:not(.hidden)')?.id;
-    if (!current) return;
+  function refreshActiveView() {
+    const active = document.querySelector('section:not(.hidden)')?.id;
+    if (!active) return;
 
-    if (current === 'dashboard')         renderDashboard();
-    if (current === 'status-log')        renderFullLog();
-    if (current === 'summary')           renderSummary();
-    if (current === 'manage-equipment')  renderEquipmentRegister();
-    if (current === 'maintenance-schedule') renderMaintenance();
+    if (active === 'dashboard')          populateDashboard();
+    if (active === 'status-log')         populateLogTable();
+    if (active === 'summary')            populateSummaryTable();
+    if (active === 'manage-equipment')   populateEquipmentTable();
+    if (active === 'maintenance-schedule') populateMaintenanceTable();
+    if (active === 'calendar')           initCalendar();
   }
 
-  function renderDashboard() {
-    document.getElementById('kpi-grid').innerHTML = `
-      <div class="kpi-card green"><i class="fas fa-truck"></i><h2>${equipment.length}</h2><p>Equipment</p></div>
-      <div class="kpi-card orange"><i class="fas fa-wrench"></i><h2>${updates.filter(u => u.status === 'Down').length}</h2><p>Currently Down</p></div>
-      <div class="kpi-card blue"><i class="fas fa-history"></i><h2>${updates.length}</h2><p>Total Updates</p></div>
-    `;
+  // ── Theme Toggle ───────────────────────────────────────────
+  function toggleTheme() {
+    const isDark = document.documentElement.hasAttribute('data-theme');
+    document.documentElement.toggleAttribute('data-theme');
+    localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    document.getElementById('theme-toggle').textContent = isDark ? '☀️' : '🌙';
   }
 
-  function renderFullLog() {
-    const tbody = document.querySelector('#full-log-table tbody');
-    tbody.innerHTML = updates.map(u => `
-      <tr>
-        <td>${u.date || '-'}</td>
-        <td>${u.time || '-'}</td>
-        <td>${u.equipmentId || '-'}</td>
-        <td>${u.status || '-'}</td>
-        <td>${u.shift || '-'}</td>
-        <td>${(u.reason || '').substring(0,60)}${(u.reason||'').length > 60 ? '...' : ''}</td>
-        <td>${u.downtimeHours || 0}</td>
-      </tr>
-    `).join('');
+  if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.setAttribute('data-theme', '');
+    document.getElementById('theme-toggle').textContent = '🌙';
   }
 
-  function renderSummary() {
-    const tbody = document.querySelector('#summary-table tbody');
-    tbody.innerHTML = equipment.map(e => `
-      <tr>
-        <td>${e.id}</td>
-        <td>${e.shaft || '-'}</td>
-        <td>${e.level || '-'}</td>
-        <td>${e.locoSize || '-'}</td>
-        <td>${e.section || '-'}</td>
-        <td>-</td><td>-</td>
-      </tr>
-    `).join('');
-  }
-
-  function renderEquipmentRegister() {
-    const tbody = document.querySelector('#equipment-table tbody');
-    tbody.innerHTML = equipment.map(e => `
-      <tr>
-        <td>${e.shaft || '-'}</td>
-        <td>${e.level || '-'}</td>
-        <td>${e.locoSize || '-'}</td>
-        <td><strong>${e.id}</strong></td>
-        <td>${e.section || '-'}</td>
-      </tr>
-    `).join('');
-  }
-
-  function renderMaintenance() {
-    const tbody = document.querySelector('#maintenance-table tbody');
-    tbody.innerHTML = maintenance.map(t => `
-      <tr>
-        <td>${t.equipment || '-'}</td>
-        <td>${t.task || '-'}</td>
-        <td>${t.interval || '-'}</td>
-        <td>${t.lastDone || '-'}</td>
-      </tr>
-    `).join('');
-  }
-
-  // ── Add Equipment ───────────────────────────────────────────────
-  document.getElementById('add-equipment-form').addEventListener('submit', async e => {
+  // ── Add Equipment ──────────────────────────────────────────
+  document.getElementById('add-eq-form').onsubmit = async e => {
     e.preventDefault();
-    const id = document.getElementById('eq-id').value.trim();
+    const id = document.getElementById('loco-number').value.trim().toUpperCase();
     if (!id) return alert('Equipment ID required');
 
     const data = {
-      shaft:   document.getElementById('eq-shaft').value.trim(),
-      level:   document.getElementById('eq-level').value.trim(),
-      locoSize: document.getElementById('eq-size').value.trim(),
-      section: document.getElementById('eq-section').value.trim(),
+      shaft:    document.getElementById('shaft').value.trim(),
+      level:    document.getElementById('level').value.trim(),
+      locoSize: document.getElementById('loco-size').value.trim(),
+      section:  document.getElementById('section').value.trim(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
@@ -505,66 +546,339 @@
     } catch (err) {
       alert('Error: ' + err.message);
     }
-  });
+  };
 
-  // ── Add Status Update ───────────────────────────────────────────
-  document.getElementById('add-status-form').addEventListener('submit', async e => {
+  // ── Status Update ──────────────────────────────────────────
+  document.getElementById('add-status-form').onsubmit = async e => {
     e.preventDefault();
 
     const data = {
-      equipmentId: document.getElementById('upd-equipment').value.trim(),
-      date:        document.getElementById('upd-date').value,
-      time:        document.getElementById('upd-time').value,
-      status:      document.getElementById('upd-status').value,
-      shift:       document.getElementById('upd-shift').value,
-      reason:      document.getElementById('upd-reason').value.trim(),
-      downtimeHours: Number(document.getElementById('upd-downtime').value) || 0,
-      createdAt:   serverTimestamp(),
-      createdBy:   auth.currentUser?.email || 'anonymous'
+      equipmentId:   document.getElementById('u-loco').value.trim().toUpperCase(),
+      date:          document.getElementById('u-date').value,
+      time:          document.getElementById('u-time').value,
+      status:        document.getElementById('u-status').value,
+      shift:         document.getElementById('u-shift').value,
+      reason:        document.getElementById('u-reason').value.trim(),
+      downtimeHours: Number(document.getElementById('u-downtime').value) || 0,
+      isFailure:     document.getElementById('u-failure').value === 'true',
+      createdAt:     serverTimestamp(),
+      createdBy:     auth.currentUser?.email || 'anonymous'
     };
 
-    if (!data.equipmentId || !data.date || !data.reason) {
-      return alert('Required fields missing');
+    if (!data.equipmentId || !data.date || !data.time || !data.reason) {
+      return alert('Please fill all required fields');
     }
 
     try {
       await addDoc(collection(db, "status_updates"), data);
       alert('Update saved');
       e.target.reset();
+      document.getElementById('u-date').value = new Date().toISOString().slice(0,10);
     } catch (err) {
       alert('Error: ' + err.message);
     }
-  });
+  };
 
-  // ── Add Maintenance Task ────────────────────────────────────────
-  document.getElementById('add-maint-form').addEventListener('submit', async e => {
+  // ── Dashboard Population ───────────────────────────────────
+  function populateDashboard() {
+    const shaft = document.getElementById('shaft-filter').value;
+    const filteredEq = shaft ? equipment.filter(e => e.shaft === shaft) : equipment;
+
+    // KPIs
+    let operational = 0, downShort = 0, downLong = 0;
+    filteredEq.forEach(e => {
+      const st = getEquipmentStatus(e.id);
+      if (st.status === 'Up') operational++;
+      else if (st.downtimeDays <= 7) downShort++;
+      else downLong++;
+    });
+    const avail = filteredEq.length ? ((operational / filteredEq.length) * 100).toFixed(1) : 0;
+
+    document.getElementById('kpi-grid').innerHTML = `
+      <div class="kpi-card green"><h2>${operational}</h2><p>Operational</p></div>
+      <div class="kpi-card orange"><h2>${downShort}</h2><p>Down < 7 days</p></div>
+      <div class="kpi-card red"><h2>${downLong}</h2><p>Down > 7 days</p></div>
+      <div class="kpi-card blue"><h2>${avail}%</h2><p>Fleet Availability</p></div>`;
+
+    // Charts data
+    const availLabels = [], availData = [], failLabels = [], failData = [], mttfData = [];
+    const allDates = filteredEq.flatMap(e => updates.filter(u => u.equipmentId === e.id).map(u => u.date));
+    const minDate = allDates.length ? allDates.reduce((a,c)=>c<a?c:a) : new Date().toISOString().slice(0,10);
+    const maxDate = allDates.length ? allDates.reduce((a,c)=>c>a?c:a) : new Date().toISOString().slice(0,10);
+    const totalDays = Math.ceil((new Date(maxDate) - new Date(minDate)) / 86400000) + 1;
+
+    filteredEq.forEach(e => {
+      const eu = updates.filter(u => u.equipmentId === e.id);
+      const downH = eu.reduce((s,u)=>s + (u.downtimeHours||0), 0);
+      const downD = downH / 24;
+      const opD = totalDays - downD;
+      const failures = eu.filter(u => u.isFailure).length;
+      const mttf = failures > 0 ? (opD / failures).toFixed(1) : '—';
+
+      availLabels.push(e.id);
+      availData.push(totalDays > 0 ? ((opD/totalDays)*100).toFixed(1) : 100);
+      failLabels.push(e.id);
+      failData.push(failures);
+      mttfData.push(mttf === '—' ? 0 : Number(mttf));
+    });
+
+    // Destroy old charts
+    Object.values(charts).forEach(c => c?.destroy());
+
+    charts.availability = new Chart(document.getElementById('availabilityChart'), {
+      type: 'bar',
+      data: { labels: availLabels, datasets: [{ label: 'Availability %', data: availData, backgroundColor: '#10b981', borderRadius: 6 }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
+    });
+
+    charts.failures = new Chart(document.getElementById('failuresChart'), {
+      type: 'bar',
+      data: { labels: failLabels, datasets: [{ label: 'Failures', data: failData, backgroundColor: '#ef4444', borderRadius: 6 }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+    });
+
+    charts.mttf = new Chart(document.getElementById('mttfChart'), {
+      type: 'bar',
+      data: { labels: availLabels, datasets: [{ label: 'MTTF (days)', data: mttfData, backgroundColor: '#3b82f6', borderRadius: 6 }] },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+    });
+
+    // High risk
+    const highRisk = filteredEq.filter(e => {
+      const st = getEquipmentStatus(e.id);
+      return st.status === 'Down' && st.downtimeDays > 7;
+    });
+    document.getElementById('high-risk-list').innerHTML = highRisk.map(e => `<li>Loco ${e.id} – ${e.shaft || '?'} <strong style="color:var(--danger);margin-left:12px;">LONG DOWNTIME</strong></li>`).join('');
+    document.getElementById('high-risk-alerts').classList.toggle('hidden', highRisk.length === 0);
+
+    // Predictive maintenance
+    const predictive = maintenance.filter(m => {
+      const daysLeft = calculateDaysLeft(m.lastDone, m.interval);
+      return daysLeft <= 7 && !isNaN(daysLeft);
+    });
+    document.getElementById('predictive-list').innerHTML = predictive.map(m => {
+      const d = calculateDaysLeft(m.lastDone, m.interval);
+      return `<li>${m.equipmentId} – ${m.task} <strong style="color:var(--warning);margin-left:12px;">${d >= 0 ? d+' days' : 'OVERDUE'}</strong></li>`;
+    }).join('');
+    document.getElementById('predictive-alerts').classList.toggle('hidden', predictive.length === 0);
+
+    // Upcoming maintenance list
+    const sortedMaint = [...maintenance].sort((a,b) => calculateDaysLeft(a.lastDone,a.interval) - calculateDaysLeft(b.lastDone,b.interval));
+    document.getElementById('maintenance-list').innerHTML = sortedMaint.map(m => {
+      const days = calculateDaysLeft(m.lastDone, m.interval);
+      const txt = isNaN(days) ? '—' : (days >= 0 ? `${days} days left` : `${Math.abs(days)} days overdue`);
+      const col = days > 5 ? 'var(--success)' : (days >= 0 ? 'var(--warning)' : 'var(--danger)');
+      return `<div style="padding:0.9rem 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+        <div><strong>${m.equipmentId}</strong> – ${m.task}</div>
+        <div style="color:${col};font-weight:600;">${txt}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function getEquipmentStatus(id) {
+    const ups = updates.filter(u => u.equipmentId === id)
+                       .sort((a,b) => new Date(b.date+' '+b.time) - new Date(a.date+' '+a.time));
+
+    if (!ups.length) return { status:'Up', downtimeDays:0, color:'green' };
+
+    const latest = ups[0];
+    if (latest.status === 'Fixed') return { status:'Up', downtimeDays:0, color:'green' };
+
+    const totalDownH = ups.reduce((s,u)=>s+(u.downtimeHours||0),0);
+    const dates = [...new Set(ups.map(u=>u.date))].sort();
+    const minD = dates[0] || new Date().toISOString().slice(0,10);
+    const maxD = dates[dates.length-1] || new Date().toISOString().slice(0,10);
+    const totalD = Math.ceil((new Date(maxD) - new Date(minD)) / 86400000) + 1;
+    const downDays = totalDownH / 24;
+
+    return {
+      status: 'Down',
+      downtimeDays: downDays,
+      color: downDays > 7 ? 'red' : 'orange'
+    };
+  }
+
+  function calculateDaysLeft(lastDone, interval) {
+    if (!lastDone) return NaN;
+    const last = new Date(lastDone);
+    let days = 0;
+    if (interval === 'weekly')    days = 7;
+    if (interval === 'monthly')   days = 30;
+    if (interval === 'quarterly') days = 90;
+    const due = new Date(last);
+    due.setDate(due.getDate() + days);
+    return Math.ceil((due - new Date()) / 86400000);
+  }
+
+  // ── Other population functions (simplified) ────────────────
+  function populateLogTable() {
+    document.querySelector('#log-table tbody').innerHTML = updates.map(u => `
+      <tr>
+        <td>${u.date}</td><td>${u.time}</td><td>${u.equipmentId}</td><td>${u.status}</td>
+        <td>${u.shift}</td><td>${u.reason}</td><td>${u.downtimeHours||0}</td><td>${u.isFailure?'Yes':'No'}</td>
+      </tr>`).join('');
+  }
+
+  function populateSummaryTable() {
+    const tbody = document.querySelector('#summary-table tbody');
+    const allDates = updates.map(u => u.date);
+    const minD = allDates.length ? allDates.reduce((a,c)=>c<a?c:a) : new Date().toISOString().slice(0,10);
+    const maxD = allDates.length ? allDates.reduce((a,c)=>c>a?c:a) : new Date().toISOString().slice(0,10);
+    const totalDays = Math.ceil((new Date(maxD) - new Date(minD)) / 86400000) + 1;
+
+    tbody.innerHTML = equipment.map(e => {
+      const eu = updates.filter(u => u.equipmentId === e.id);
+      const downH = eu.reduce((s,u)=>s+(u.downtimeHours||0),0);
+      const downD = downH/24;
+      const opD = totalDays - downD;
+      const fails = eu.filter(u=>u.isFailure).length;
+      const mttf = fails > 0 ? (opD/fails).toFixed(1) : '—';
+      const avail = totalDays > 0 ? ((opD/totalDays)*100).toFixed(1) : 100;
+      const last = eu[0] ? eu[0].date + ' ' + eu[0].time : '—';
+      const st = getEquipmentStatus(e.id);
+      return `<tr>
+        <td>${e.id}</td><td>${eu.length}</td><td>${totalDays}</td><td>${downD.toFixed(1)}</td>
+        <td>${opD.toFixed(1)}</td><td>${fails}</td><td>${mttf}</td><td>${avail}%</td>
+        <td>${last}</td><td style="color:${st.color === 'red'?'#dc2626':st.color === 'orange'?'#ea580c':'#16a34a'}">${st.status}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function populateEquipmentTable() {
+    document.querySelector('#equipment-table tbody').innerHTML = equipment.map(e => `
+      <tr><td>${e.shaft||'-'}</td><td>${e.level||'-'}</td><td>${e.locoSize||'-'}</td><td>${e.id}</td><td>${e.section||'-'}</td></tr>
+    `).join('');
+  }
+
+  function populateMaintenanceTable() {
+    const tbody = document.querySelector('#maint-table tbody');
+    tbody.innerHTML = maintenance.map(m => {
+      const days = calculateDaysLeft(m.lastDone, m.interval);
+      const disp = isNaN(days) ? '—' : (days >= 0 ? days : Math.abs(days)+' overdue');
+      return `<tr><td>${m.equipmentId}</td><td>${m.task}</td><td>${m.interval}</td><td>${m.lastDone||'-'}</td><td>${calculateNextDue(m.lastDone,m.interval)||'-'}</td><td>${disp}</td></tr>`;
+    }).join('');
+  }
+
+  function calculateNextDue(last, interval) {
+    if (!last) return '';
+    const d = new Date(last);
+    let add = 7; if (interval==='monthly') add=30; if (interval==='quarterly') add=90;
+    d.setDate(d.getDate() + add);
+    return d.toISOString().slice(0,10);
+  }
+
+  function initCalendar() {
+    const calendarEl = document.getElementById('calendar-div');
+    if (calendarEl._calendar) calendarEl._calendar.destroy();
+
+    const events = maintenance.map(m => {
+      if (!m.lastDone) return null;
+      const d = new Date(m.lastDone);
+      let add = 7; if (m.interval==='monthly') add=30; if (m.interval==='quarterly') add=90;
+      d.setDate(d.getDate() + add);
+      return { title: `${m.equipmentId} – ${m.task}`, date: d.toISOString().slice(0,10), color: '#ea580c' };
+    }).filter(Boolean);
+
+    calendarEl._calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      events: events,
+      headerToolbar: { left:'prev,next today', center:'title', right:'dayGridMonth,timeGridWeek' },
+      height: 'auto'
+    });
+    calendarEl._calendar.render();
+  }
+
+  // ── Search ─────────────────────────────────────────────────
+  document.getElementById('search-form').onsubmit = e => {
+    e.preventDefault();
+    const id   = document.getElementById('s-loco').value.trim().toUpperCase();
+    const date = document.getElementById('s-date').value;
+    const all  = document.getElementById('show-all-history').checked;
+
+    if (!id) return alert('Please enter Equipment ID');
+
+    const filtered = updates.filter(u => u.equipmentId === id && (all || !date || u.date === date));
+    filtered.sort((a,b) => new Date(b.date+' '+b.time) - new Date(a.date+' '+a.time));
+
+    const html = filtered.length ? filtered.map(u => `
+      <div style="padding:1rem;border-bottom:1px solid var(--border);">
+        <strong>${u.date} ${u.time}</strong> – <span style="color:${u.status==='Fixed'?'var(--success)':'var(--danger)'}">${u.status}</span>:
+        ${u.reason} ${u.downtimeHours ? `(${u.downtimeHours} h)` : ''} ${u.isFailure ? '<strong style="color:var(--danger);margin-left:10px;">FAILURE</strong>':''}
+      </div>`).join('') : '<p style="color:var(--warning);font-style:italic;">No matching records found.</p>';
+
+    document.getElementById('search-results').innerHTML = `<h3 style="margin-bottom:1rem;">${id} History</h3>` + html;
+  };
+
+  // ── CSV Export (log) ───────────────────────────────────────
+  function exportLogCSV() {
+    let csv = "Date,Time,EquipmentID,Status,Shift,Reason,DowntimeHours,Failure\n";
+    updates.forEach(u => {
+      csv += `${u.date},${u.time},${u.equipmentId},${u.status},${u.shift},"${u.reason.replace(/"/g,'""')}",${u.downtimeHours||0},${u.isFailure ? 'Yes' : 'No'}\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `RBE_Log_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+  }
+
+  // ── PDF Export Dashboard (basic) ───────────────────────────
+  async function exportDashboardPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('landscape');
+    let y = 20;
+
+    doc.setFontSize(20);
+    doc.text("RBE Fleet Dashboard", 15, y); y += 12;
+    doc.setFontSize(11);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 15, y); y += 15;
+
+    // KPIs
+    const kpis = Array.from(document.querySelectorAll('#kpi-grid .kpi-card h2')).map(h=>h.textContent);
+    doc.setFontSize(14);
+    doc.text(`Operational: ${kpis[0]}   Down <7d: ${kpis[1]}   Down >7d: ${kpis[2]}   Availability: ${kpis[3]}%`, 15, y); y += 20;
+
+    // Charts
+    const canvases = ['availabilityChart','failuresChart','mttfChart'];
+    for (const id of canvases) {
+      const canvas = document.getElementById(id);
+      if (canvas) {
+        const imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', 15, y, 260, 90);
+        y += 100;
+        if (y > 180) { doc.addPage(); y = 20; }
+      }
+    }
+
+    doc.save(`RBE_Dashboard_${new Date().toISOString().slice(0,10)}.pdf`);
+  }
+
+  // ── Maintenance Add ────────────────────────────────────────
+  document.getElementById('add-maint-form').onsubmit = async e => {
     e.preventDefault();
     const data = {
-      equipment: e.target[0].value.trim(),
-      task:      e.target[1].value.trim(),
-      interval:  e.target[2].value,
-      lastDone:  e.target[3].value,
-      createdAt: serverTimestamp()
+      equipmentId: e.target[0].value.trim().toUpperCase(),
+      task:        e.target[1].value.trim(),
+      interval:    e.target[2].value,
+      lastDone:    e.target[3].value,
+      createdAt:   serverTimestamp()
     };
 
     try {
-      await addDoc(collection(db, "maintenance"), data);
+      await addDoc(collection(db, "maintenance_tasks"), data);
       alert('Maintenance task added');
-      document.getElementById('maint-modal').classList.remove('active');
+      document.getElementById('add-maint-modal').classList.remove('active');
       e.target.reset();
     } catch (err) {
       alert('Error: ' + err.message);
     }
-  });
+  };
 
-  // ── Theme toggle ────────────────────────────────────────────────
-  function toggleTheme() {
-    document.documentElement.toggleAttribute('data-theme');
-    document.getElementById('theme-toggle').textContent = document.documentElement.hasAttribute('data-theme') ? '🌙' : '☀️';
-  }
-
-  // Start with dashboard visible
-  document.getElementById('dashboard').classList.remove('hidden');
+  // ── Start ──────────────────────────────────────────────────
+  document.getElementById('u-date').value = new Date().toISOString().slice(0,10);
+  document.querySelector('#sidebar-menu li').click(); // open dashboard
 </script>
+
 </body>
 </html>
