@@ -351,21 +351,21 @@
             <h1>All Operations Report</h1>
             <button class="btn btn-primary" onclick="exportOperationsReportPDF()"><i class="fas fa-file-pdf"></i> Export Report (PDF)</button>
           </div>
-          <h2 style="color:var(--teal);"><i class="fas fa-chart-line"></i> Operation Status</h2>
+          <h2 style="color:var(--info);"><i class="fas fa-chart-line"></i> Operation Status</h2>
           <div style="overflow-x:auto;">
             <table id="op-status-table">
               <thead><tr><th>Status</th><th>Count</th><th>Percentage</th></tr></thead>
               <tbody id="op-status-tbody"></tbody>
             </table>
           </div>
-          <h2 style="color:var(--teal);"><i class="fas fa-exclamation-triangle"></i> Problem Equipment</h2>
+          <h2 style="color:var(--info);"><i class="fas fa-exclamation-triangle"></i> Problem Equipment</h2>
           <div style="overflow-x:auto;">
             <table id="problem-equipment-table">
               <thead><tr><th>Equipment ID</th><th>Status</th><th>Color</th><th>Last Reason/Fault</th><th>Total Downtime Hours</th></tr></thead>
               <tbody id="problem-equipment-tbody"></tbody>
             </table>
           </div>
-          <h2 style="color:var(--teal);"><i class="fas fa-fire"></i> Focus Areas: High Risk Equipment</h2>
+          <h2 style="color:var(--info);"><i class="fas fa-fire"></i> Focus Areas: High Risk Equipment</h2>
           <div style="overflow-x:auto;">
             <table id="high-risk-table">
               <thead><tr><th>Equipment ID</th><th>Number of Failures</th><th>MTTF (Days)</th><th>Availability %</th></tr></thead>
@@ -479,7 +479,7 @@
 
 <script type="module">
   // ────────────────────────────────────────────────
-  // Firebase v10 Modular (exactly as RBE2)
+  // Firebase v10 Modular
   // ────────────────────────────────────────────────
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -510,7 +510,7 @@
   let columnHeaders = [];
   let selectedMapping = {};
 
-  // ── Auth UI (exactly as RBE2) ─────────────────────────────────────────────────────
+  // ── Auth UI ─────────────────────────────────────────────────────
   const authSection = document.getElementById('auth-section');
   const appDiv = document.getElementById('app');
   const authForm = document.getElementById('auth-form');
@@ -564,7 +564,7 @@
     }
   });
 
-  // ── Real-time listeners (exactly as RBE2 + delays for full RBE1 functionality) ─────────────────────────────────────────
+  // ── Real-time listeners ─────────────────────────────────────────
   function startRealtimeListeners() {
     onSnapshot(collection(db, "equipment"), snap => {
       equipment = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -588,7 +588,7 @@
     });
   }
 
-  // ── Navigation & Refresh (full RBE1) ──────────────────────────────────────────────────
+  // ── Navigation & Refresh ────────────────────────────────────────
   function show(section) {
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
     document.getElementById(section).classList.remove('hidden');
@@ -615,7 +615,7 @@
     li.addEventListener('click', () => show(li.dataset.section));
   });
 
-  // ── Utility functions (RBE1 adapted to Firebase field names) ──────────────────────────────────────────────────
+  // ── Utility functions ───────────────────────────────────────────
   function fillDatalist() {
     const dl = document.getElementById('loco-list');
     dl.innerHTML = equipment.map(e => `<option value="${e.id}"></option>`).join('');
@@ -623,7 +623,14 @@
     const job = document.getElementById('job-loco');
     job.innerHTML = '<option value="">Select Equipment</option>' + equipment.map(e => `<option value="${e.id}">${e.id}</option>`).join('');
 
-    const shafts = ['0 Shaft','1 Shaft','2 Shaft','3 Shaft','4 Shaft','5 Shaft','6 Shaft','7 Shaft','7A Shaft','8 Shaft','9 Shaft','10 Shaft','10D','11 Shaft','11C Shaft','11D','12 Shaft','12 North Shaft','12S','14 Shaft','14D','16 Shaft','17 Shaft','20 Shaft','CLAPHAM','DRIKOP','E&F Shaft','NORTH SHAFT','SOUTH SHAFT','STYLDRIFT','Winnaarshoek','Forest Hill','Offset Underground','UG2 Main Decline','Merensky Main Decline','UG2 North Decline','367-KT (Kalkfontein)','368-KT (Buffelshoek)','370-KT (Richmond)','372-KT (Dwarsrivier)','373-KT (De Grooteboom)','374-KT (Tweefontein)','Leeuwkop Shaft'];
+    const shafts = [
+      '0 Shaft','1 Shaft','2 Shaft','3 Shaft','4 Shaft','5 Shaft','6 Shaft','7 Shaft','7A Shaft','8 Shaft','9 Shaft','10 Shaft','10D',
+      '11 Shaft','11C Shaft','11D','12 Shaft','12 North Shaft','12S','14 Shaft','14D','16 Shaft','17 Shaft','20 Shaft',
+      'CLAPHAM','DRIKOP','E&F Shaft','NORTH SHAFT','SOUTH SHAFT','STYLDRIFT','Winnaarshoek','Forest Hill',
+      'Offset Underground','UG2 Main Decline','Merensky Main Decline','UG2 North Decline',
+      '367-KT (Kalkfontein)','368-KT (Buffelshoek)','370-KT (Richmond)','372-KT (Dwarsrivier)',
+      '373-KT (De Grooteboom)','374-KT (Tweefontein)','Leeuwkop Shaft'
+    ];
 
     const shaftSelect = document.getElementById('shaft');
     shaftSelect.innerHTML = '<option value="">Select Shaft</option>' + shafts.map(s => `<option value="${s}">${s}</option>`).join('');
@@ -683,8 +690,8 @@
   function calculateNextDue(last, interval) {
     if (!last) return null;
     const d = new Date(last);
-    if (interval==='weekly') d.setDate(d.getDate()+7);
-    else if (interval==='monthly') d.setMonth(d.getMonth()+1);
+    if (interval==='weekly')      d.setDate(d.getDate()+7);
+    else if (interval==='monthly')   d.setMonth(d.getMonth()+1);
     else if (interval==='quarterly') d.setMonth(d.getMonth()+3);
     return d.toISOString().slice(0,10);
   }
@@ -695,7 +702,7 @@
     return Math.ceil((new Date(due) - new Date()) / 86400000);
   }
 
-  // ── Dashboard (RBE1 + Firebase fields) ──────────────────────────────────────────────────
+  // ── Dashboard ───────────────────────────────────────────────────
   function populateDashboard() {
     const filteredEq = getFilteredEquipment();
     const locoIds = filteredEq.map(e => e.id);
@@ -719,9 +726,9 @@
       <div class="kpi-card blue"><i class="fas fa-percent"></i><h2>${avgAvail}</h2><p>Availability %</p></div>
     `;
 
-    const availData = locoIds.map(id => parseFloat(getEquipmentStatus(id).availability));
-    const failureData = locoIds.map(id => filteredUp.filter(u=>u.equipmentId===id && u.isFailure==='1').length);
-    
+    const availData    = locoIds.map(id => parseFloat(getEquipmentStatus(id).availability));
+    const failureData  = locoIds.map(id => filteredUp.filter(u=>u.equipmentId===id && u.isFailure==='1').length);
+
     const mttfData = locoIds.map(id => {
       const eu = filteredUp.filter(u => u.equipmentId === id);
       const fails = eu.filter(u => u.isFailure === '1').length;
@@ -738,17 +745,33 @@
     });
 
     if (charts.avail) charts.avail.destroy();
-    charts.avail = new Chart(document.getElementById('availabilityChart'), {type:'bar', data:{labels:locoIds, datasets:[{data:availData, backgroundColor:'#1d4ed8'}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}}}});
+    charts.avail = new Chart(document.getElementById('availabilityChart'), {
+      type:'bar',
+      data:{ labels:locoIds, datasets:[{data:availData, backgroundColor:'#1d4ed8'}] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}} }
+    });
 
     if (charts.failures) charts.failures.destroy();
-    charts.failures = new Chart(document.getElementById('failuresChart'), {type:'bar', data:{labels:locoIds, datasets:[{data:failureData, backgroundColor:'#dc2626'}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}});
+    charts.failures = new Chart(document.getElementById('failuresChart'), {
+      type:'bar',
+      data:{ labels:locoIds, datasets:[{data:failureData, backgroundColor:'#dc2626'}] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    });
 
     if (charts.mttf) charts.mttf.destroy();
-    charts.mttf = new Chart(document.getElementById('mttfChart'), {type:'bar', data:{labels:locoIds, datasets:[{data:mttfData, backgroundColor:'#ea580c'}]}, options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}}}});
+    charts.mttf = new Chart(document.getElementById('mttfChart'), {
+      type:'bar',
+      data:{ labels:locoIds, datasets:[{data:mttfData, backgroundColor:'#ea580c'}] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    });
 
-    const reasons = getFilteredDelays().reduce((acc,d)=>{acc[d.reason]=(acc[d.reason]||0)+d.hours;return acc;},{});    
+    const reasons = getFilteredDelays().reduce((acc,d)=>{acc[d.reason]=(acc[d.reason]||0)+d.hours;return acc;},{});
     if (charts.delay) charts.delay.destroy();
-    charts.delay = new Chart(document.getElementById('delayChart'), {type:'pie', data:{labels:Object.keys(reasons), datasets:[{data:Object.values(reasons), backgroundColor:['#1d4ed8','#16a34a','#ea580c','#dc2626','#8b5cf6']}]}, options:{responsive:true, maintainAspectRatio:false}});
+    charts.delay = new Chart(document.getElementById('delayChart'), {
+      type:'pie',
+      data:{ labels:Object.keys(reasons), datasets:[{data:Object.values(reasons), backgroundColor:['#1d4ed8','#16a34a','#ea580c','#dc2626','#8b5cf6']}] },
+      options:{ responsive:true, maintainAspectRatio:false }
+    });
 
     const highRisk = locoIds.filter(id => getEquipmentStatus(id).downtime > 168).map(id => {
       const st = getEquipmentStatus(id);
@@ -775,7 +798,7 @@
     refreshCurrentView();
   }
 
-  // ── Other populate functions (adapted to Firebase fields) ──────────────────────────────────────────────────
+  // ── Other populate functions ────────────────────────────────────
   function populateOperationsReport() {
     const allIds = equipment.map(e => e.id);
     const statusSummary = {Up:0, Down:0};
@@ -828,7 +851,7 @@
   function searchStatus(loco, date, all) {
     let results = updates.filter(u => u.equipmentId === loco);
     if (date && !all) results = results.filter(u => u.date === date);
-    const html = results.length ? 
+    const html = results.length ?
       `<table style="width:100%"><thead><tr><th>Date</th><th>Time</th><th>Status</th><th>Shift</th><th>Reason/Fault</th><th>Downtime Hours</th><th>Is Failure?</th></tr></thead><tbody>` +
       results.map(u => `<tr><td>${u.date}</td><td>${u.time}</td><td>${u.status}</td><td>${u.shift}</td><td>${u.reason}</td><td>${u.downtimeHours||0}</td><td>${u.isFailure==='1'?'Yes':'No'}</td></tr>`).join('') +
       `</tbody></table>` : 'No results found.';
@@ -943,7 +966,7 @@
     }
   }
 
-  // ── Export functions (RBE1) ──────────────────────────────────────────────────
+  // ── Export functions ────────────────────────────────────────────
   function exportDashboardPDF() {
     html2canvas(document.getElementById('dashboard'), {scale:2}).then(canvas => {
       const {jsPDF} = window.jspdf;
@@ -1053,8 +1076,8 @@
     if (shaftFilter) {
       const shaftEq = equipment.filter(e => e.shaft === shaftFilter);
       const shaftIds = shaftEq.map(e => e.id);
-      filtered = filtered.filter(u => 
-        (u.shaft && u.shaft === shaftFilter) || 
+      filtered = filtered.filter(u =>
+        (u.shaft && u.shaft === shaftFilter) ||
         shaftIds.includes(u.equipmentId)
       );
     }
@@ -1101,7 +1124,7 @@
     link.click();
   }
 
-  // ── Import Excel (RBE1 + Firebase save) ──────────────────────────────────────────────────
+  // ── Import Excel ────────────────────────────────────────────────
   function handleFileUpload() {
     const file = document.getElementById('excel-file').files[0];
     if (!file) return alert('Select Excel file');
@@ -1217,17 +1240,19 @@
         downtimeHours: parseFloat(downtimeHrs.toFixed(2)),
         isFailure: '1',
         source: 'Imported Breakdown Report',
-        shaft: selectedShaft || ''
+        shaft: selectedShaft || '',
+        createdAt: serverTimestamp()
       };
       await addDoc(collection(db, "status_updates"), importedUpdate);
 
+      // Auto-create equipment record if shaft is selected and equipment doesn't exist
       if (selectedShaft && !equipment.some(e => e.id === equipment)) {
         await setDoc(doc(db, "equipment", equipment), {
           shaft: selectedShaft,
           level: 'Imported',
           locoSize: 'N/A',
           section: 'Imported'
-        });
+        }, { merge: true });
       }
       count++;
     }
@@ -1238,7 +1263,7 @@
     document.getElementById('mapping-section').classList.add('hidden');
   }
 
-  // ── Form listeners (RBE1 + Firebase save) ──────────────────────────────────────────────────
+  // ── Form listeners ──────────────────────────────────────────────
   document.getElementById('add-eq-form').addEventListener('submit', async e => {
     e.preventDefault();
     const id = document.getElementById('loco-number').value.trim();
@@ -1334,7 +1359,7 @@
     );
   });
 
-  // ── Theme toggle (RBE1) ──────────────────────────────────────────────────
+  // ── Theme toggle ────────────────────────────────────────────────
   function toggleTheme() {
     const html = document.documentElement;
     if (html.getAttribute('data-theme') === 'dark') {
@@ -1348,7 +1373,7 @@
     }
   }
 
-  // ── Initial load (RBE1 style but no localStorage seeding – Firebase will handle) ──────────────────────────────────────────────────
+  // ── Initial load ────────────────────────────────────────────────
   if (localStorage.getItem('theme') === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
     document.getElementById('theme-toggle').innerHTML = '🌙';
