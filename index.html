@@ -297,7 +297,6 @@
   </aside>
 
   <main class="main">
-
     <!-- Dashboard -->
     <section id="dashboard-view" class="view-section">
       <div class="header-bar">
@@ -466,14 +465,11 @@
         </table>
       </div>
     </section>
-
   </main>
 </div>
 
-<!-- Datalist for equipment IDs -->
 <datalist id="loco-list"></datalist>
 
-<!-- Maintenance Modal -->
 <div id="maint-modal" class="modal">
   <div class="modal-content">
     <h2 style="margin-bottom:1.2rem;">Add Maintenance Task</h2>
@@ -506,9 +502,6 @@
 </div>
 
 <script type="module">
-  // ────────────────────────────────────────────────
-  // Firebase v10 Modular
-  // ────────────────────────────────────────────────
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
   import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
   import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
@@ -531,39 +524,34 @@
   let updates = [];
   let maintenance = [];
 
-  // Anonymous sign-in on load
   signInAnonymously(auth)
     .then(() => console.log("Signed in anonymously"))
     .catch(err => {
       console.error("Anonymous auth failed:", err);
-      alert("Connection issue. Please refresh the page.");
+      alert("Connection issue. Please check console (F12) and refresh.");
     });
 
   onAuthStateChanged(auth, user => {
     if (user) {
-      document.body.classList.add('loaded');
       startRealtime();
     }
   });
 
   function startRealtime() {
-    // Equipment
     onSnapshot(collection(db, "equipment"), snap => {
       equipment = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       updateUI();
-    }, err => console.error("Equipment error:", err));
+    });
 
-    // Status updates – newest first
     onSnapshot(query(collection(db, "status_updates"), orderBy("createdAt", "desc")), snap => {
       updates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       updateUI();
-    }, err => console.error("Updates error:", err));
+    });
 
-    // Maintenance
     onSnapshot(collection(db, "maintenance"), snap => {
       maintenance = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       updateUI();
-    }, err => console.error("Maintenance error:", err));
+    });
   }
 
   function updateUI() {
@@ -573,35 +561,24 @@
   }
 
   function fillDatalist() {
-    const list = document.getElementById('loco-list');
-    list.innerHTML = equipment.map(e => `<option value="${e.id}">${e.id} (${e.shaft || ''})</option>`).join('');
+    document.getElementById('loco-list').innerHTML = equipment.map(e => `<option value="${e.id}">${e.id} (${e.shaft||''})</option>`).join('');
   }
 
   function fillShaftFilter() {
     const shafts = [...new Set(equipment.map(e => e.shaft).filter(Boolean))].sort();
-    const select = document.getElementById('shaft-filter');
-    const eqSelect = document.getElementById('eq-shaft');
-
     let html = '<option value="">All Shafts</option>';
     shafts.forEach(s => html += `<option value="${s}">${s}</option>`);
-
-    select.innerHTML = html;
-    eqSelect.innerHTML = '<option value="">Select Shaft</option>' + html.slice(html.indexOf('</option>')+8);
+    document.getElementById('shaft-filter').innerHTML = html;
+    document.getElementById('eq-shaft').innerHTML = '<option value="">Select Shaft</option>' + html.slice(html.indexOf('</option>')+8);
   }
 
-  // ── Navigation ────────────────────────────────────────
   document.querySelectorAll('#sidebar-menu li').forEach(li => {
     li.addEventListener('click', () => {
       document.querySelectorAll('.view-section').forEach(v => v.classList.add('hidden'));
       document.getElementById(li.dataset.view + '-view').classList.remove('hidden');
-
       document.querySelectorAll('#sidebar-menu li').forEach(item => item.classList.remove('active'));
       li.classList.add('active');
-
-      if (window.innerWidth <= 992) {
-        document.getElementById('sidebar').classList.remove('open');
-      }
-
+      if (window.innerWidth <= 992) document.getElementById('sidebar').classList.remove('open');
       renderCurrentView();
     });
   });
@@ -609,120 +586,99 @@
   function renderCurrentView() {
     const active = document.querySelector('.view-section:not(.hidden)');
     if (!active) return;
-
     const id = active.id;
 
-    if (id === 'dashboard-view')        renderDashboard();
-    if (id === 'status-log-view')       renderLog();
-    if (id === 'summary-view')          renderSummary();
+    if (id === 'dashboard-view') renderDashboard();
+    if (id === 'status-log-view') renderLog();
+    if (id === 'summary-view') renderSummary();
     if (id === 'manage-equipment-view') renderEquipment();
     if (id === 'maintenance-schedule-view') renderMaintenance();
   }
 
   function renderDashboard() {
-    const downCount = updates.filter(u => u.status === 'Down').length;
-
+    const down = updates.filter(u => u.status === 'Down').length;
     document.getElementById('kpi-cards').innerHTML = `
-      <div class="kpi-card">
-        <div style="font-size:1.1rem;color:var(--text-2);">Total Equipment</div>
-        <h3>${equipment.length}</h3>
-      </div>
-      <div class="kpi-card orange">
-        <div style="font-size:1.1rem;color:var(--text-2);">Currently Down</div>
-        <h3>${downCount}</h3>
-      </div>
-      <div class="kpi-card">
-        <div style="font-size:1.1rem;color:var(--text-2);">Total Updates</div>
-        <h3>${updates.length}</h3>
-      </div>
+      <div class="kpi-card"><div style="color:var(--text-2);">Total Equipment</div><h3>${equipment.length}</h3></div>
+      <div class="kpi-card orange"><div style="color:var(--text-2);">Currently Down</div><h3>${down}</h3></div>
+      <div class="kpi-card"><div style="color:var(--text-2);">Total Updates</div><h3>${updates.length}</h3></div>
     `;
   }
 
   function renderLog() {
-    const tbody = document.getElementById('log-body');
-    tbody.innerHTML = updates.map(u => `
+    document.getElementById('log-body').innerHTML = updates.map(u => `
       <tr>
-        <td>${u.date || '-'}</td>
-        <td>${u.time || '-'}</td>
-        <td>${u.equipmentId || '-'}</td>
-        <td style="font-weight:500; color:${u.status==='Down'?'var(--danger)':'var(--success)'}">
-          ${u.status || '-'}
-        </td>
-        <td>${u.shift || '-'}</td>
-        <td title="${u.reason||''}">${(u.reason||'').substring(0,45)}${(u.reason||'').length>45?'...':''}</td>
+        <td>${u.date||'-'}</td>
+        <td>${u.time||'-'}</td>
+        <td>${u.equipmentId||'-'}</td>
+        <td style="color:$$   {u.status==='Down'?'var(--danger)':'var(--success)'}">   $${u.status||'-'}</td>
+        <td>${u.shift||'-'}</td>
+        <td>$$   {(u.reason||'').substring(0,40)}   $${(u.reason||'').length>40?'...':''}</td>
         <td>${Number(u.downtimeHours||0).toFixed(1)}</td>
       </tr>
     `).join('');
   }
 
   function renderSummary() {
-    const tbody = document.getElementById('summary-body');
-    tbody.innerHTML = equipment.map(e => `
+    document.getElementById('summary-body').innerHTML = equipment.map(e => `
       <tr>
         <td><strong>${e.id}</strong></td>
-        <td>${e.shaft || '-'}</td>
-        <td>${e.level || '-'}</td>
-        <td>${e.locoSize || '-'}</td>
-        <td>${e.section || '-'}</td>
-        <td style="color:var(--text-3);font-style:italic;">No recent data</td>
-        <td style="color:var(--text-3);font-style:italic;">-</td>
+        <td>${e.shaft||'-'}</td>
+        <td>${e.level||'-'}</td>
+        <td>${e.locoSize||'-'}</td>
+        <td>${e.section||'-'}</td>
+        <td style="color:var(--text-3)">-</td>
+        <td style="color:var(--text-3)">-</td>
       </tr>
     `).join('');
   }
 
   function renderEquipment() {
-    const tbody = document.getElementById('equipment-body');
-    tbody.innerHTML = equipment.map(e => `
+    document.getElementById('equipment-body').innerHTML = equipment.map(e => `
       <tr>
-        <td>${e.shaft || '-'}</td>
-        <td>${e.level || '-'}</td>
-        <td>${e.locoSize || '-'}</td>
+        <td>${e.shaft||'-'}</td>
+        <td>${e.level||'-'}</td>
+        <td>${e.locoSize||'-'}</td>
         <td><strong>${e.id}</strong></td>
-        <td>${e.section || '-'}</td>
+        <td>${e.section||'-'}</td>
       </tr>
     `).join('');
   }
 
   function renderMaintenance() {
-    const tbody = document.getElementById('maint-body');
-    tbody.innerHTML = maintenance.map(m => `
+    document.getElementById('maint-body').innerHTML = maintenance.map(m => `
       <tr>
-        <td>${m.equipment || '-'}</td>
-        <td>${m.task || '-'}</td>
-        <td>${m.interval || '-'}</td>
-        <td>${m.lastDone || '-'}</td>
+        <td>${m.equipment||'-'}</td>
+        <td>${m.task||'-'}</td>
+        <td>${m.interval||'-'}</td>
+        <td>${m.lastDone||'-'}</td>
       </tr>
     `).join('');
   }
 
-  // ── Add Equipment ─────────────────────────────────────
   document.getElementById('add-equipment-form').addEventListener('submit', async e => {
     e.preventDefault();
     const id = document.getElementById('eq-id').value.trim();
-    if (!id) return alert("Equipment ID is required");
+    if (!id) return alert('Equipment ID required');
 
     const data = {
       shaft: document.getElementById('eq-shaft').value.trim(),
       level: document.getElementById('eq-level').value.trim(),
       locoSize: document.getElementById('eq-size').value.trim(),
       section: document.getElementById('eq-section').value.trim(),
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      createdAt: serverTimestamp()
     };
 
     try {
-      await setDoc(doc(db, "equipment", id), data, { merge: true });
-      alert("Equipment added / updated successfully");
+      await setDoc(doc(db, "equipment", id), data, {merge:true});
+      alert('Equipment saved');
       e.target.reset();
     } catch (err) {
-      alert("Error: " + err.message);
+      alert('Error: '+err.message);
     }
   });
 
-  // ── Add Status Update ─────────────────────────────────
   document.getElementById('add-status-form').addEventListener('submit', async e => {
     e.preventDefault();
-
     const data = {
       equipmentId: document.getElementById('upd-equipment').value.trim(),
       date: document.getElementById('upd-date').value,
@@ -730,59 +686,49 @@
       status: document.getElementById('upd-status').value,
       shift: document.getElementById('upd-shift').value,
       reason: document.getElementById('upd-reason').value.trim(),
-      downtimeHours: Number(document.getElementById('upd-downtime').value) || 0,
-      createdAt: serverTimestamp(),
-      createdBy: auth.currentUser?.uid || 'anonymous'
+      downtimeHours: Number(document.getElementById('upd-downtime').value)||0,
+      createdAt: serverTimestamp()
     };
 
-    if (!data.equipmentId || !data.date || !data.reason) {
-      return alert("Please fill all required fields");
-    }
+    if (!data.equipmentId || !data.date || !data.reason) return alert('Required fields missing');
 
     try {
       await addDoc(collection(db, "status_updates"), data);
-      alert("Status update saved");
+      alert('Update saved');
       e.target.reset();
     } catch (err) {
-      alert("Error: " + err.message);
+      alert('Error: '+err.message);
     }
   });
 
-  // ── Add Maintenance Task ──────────────────────────────
   document.getElementById('add-maint-form').addEventListener('submit', async e => {
     e.preventDefault();
-    const form = e.target;
-
+    const f = e.target;
     const data = {
-      equipment: form[0].value.trim(),
-      task: form[1].value.trim(),
-      interval: form[2].value,
-      lastDone: form[3].value,
+      equipment: f[0].value.trim(),
+      task: f[1].value.trim(),
+      interval: f[2].value,
+      lastDone: f[3].value,
       createdAt: serverTimestamp()
     };
 
     try {
       await addDoc(collection(db, "maintenance"), data);
-      alert("Maintenance task added");
+      alert('Task added');
       document.getElementById('maint-modal').classList.remove('active');
-      form.reset();
+      f.reset();
     } catch (err) {
-      alert("Error: " + err.message);
+      alert('Error: '+err.message);
     }
   });
 
-  // ── Theme Toggle ──────────────────────────────────────
   document.getElementById('theme-toggle').onclick = () => {
     document.documentElement.toggleAttribute('data-theme');
     document.getElementById('theme-toggle').textContent = document.documentElement.hasAttribute('data-theme') ? '🌙' : '☀️';
   };
 
-  // ── Logout ────────────────────────────────────────────
-  document.getElementById('logout-btn').onclick = () => {
-    signOut(auth).then(() => location.reload());
-  };
+  document.getElementById('logout-btn').onclick = () => signOut(auth).then(() => location.reload());
 
-  // Start on dashboard
   document.getElementById('dashboard-view').classList.remove('hidden');
 </script>
 </body>
