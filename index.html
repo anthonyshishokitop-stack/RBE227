@@ -107,18 +107,6 @@
     input:focus, select:focus, textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(29,78,216,0.15); }
     .live-indicator { position:fixed; bottom:16px; right:16px; background:#16a34a; color:white; padding:0.55rem 1.1rem; border-radius:999px; font-weight:600; font-size:0.86rem; box-shadow:0 4px 16px rgba(22,163,74,0.4); z-index:999; display:flex; align-items:center; gap:6px; }
     .hidden { display: none !important; }
-    .warning-banner {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 14px 20px;
-      margin: 0 1rem 1.25rem;
-      border-radius: 8px;
-      border-left: 6px solid #dc2626;
-      font-weight: 700;
-      font-size: 0.95rem;
-      text-align: center;
-      box-shadow: var(--shadow);
-    }
 
     @media (min-width: 1025px) {
       .sidebar { position: sticky; top: 0; height: 100vh; transform: translateX(0) !important; }
@@ -161,12 +149,6 @@
 <!-- Main Application -->
 <div id="app" class="hidden">
 
-  <!-- CRITICAL PRODUCTION WARNING BANNER -->
-  <div class="warning-banner">
-    ⚠️ <strong>PROTOTYPE ONLY – NOT PRODUCTION READY</strong><br>
-    Firebase Auth (email/password only) • No MFA/SSO/roles • Everyone is full admin • Default Firestore rules allow any authenticated user to wipe entire DB • 100% client-side (no pagination/server aggregation) • No audit trail / soft-delete only partial • No backend validation / compliance (Mine Health &amp; Safety Act / POPIA / ISO 55001) • Browser memory &amp; cost risk on &gt;5k records • Use for DEMO only.
-  </div>
-
   <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
   <button id="theme-toggle" onclick="toggleTheme()" style="position:fixed;top:14px;right:14px;z-index:1101;width:46px;height:46px;background:#64748b;color:white;border:none;border-radius:50%;font-size:1.35rem;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(100,116,139,0.4);">☀️</button>
   <button id="logout-btn" style="position:fixed;top:14px;right:70px;z-index:1102;padding:0.6rem 1.2rem;background:var(--danger);color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(220,38,38,0.4);">Logout</button>
@@ -175,7 +157,6 @@
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <img class="logo-img" src="https://apventures.com/wp-content/uploads/2023/06/image-35.jpeg" alt="Impala Platinum">
-        <div style="margin-top:8px;font-size:0.82rem;color:#94a3b8;padding:0 1.1rem;">👤 Logged in as: <span id="current-user-email" style="color:#60a5fa;font-weight:500;"></span></div>
         <button onclick="document.getElementById('sidebar').classList.remove('open')" style="background:none;border:none;color:white;font-size:2.3rem;cursor:pointer;">×</button>
       </div>
       <ul id="sidebar-menu">
@@ -206,7 +187,6 @@
                 <option value="">All Shafts</option>
               </select>
               <button class="btn btn-primary" onclick="exportDashboardPDF()"><i class="fas fa-file-pdf"></i> Export Dashboard PDF</button>
-              <button class="btn btn-primary" onclick="exportFullBackup()" style="background:#16a34a;"><i class="fas fa-download"></i> Full JSON Backup</button>
             </div>
           </div>
 
@@ -457,7 +437,7 @@
     </main>
   </div>
 
-  <div class="live-indicator"><i class="fas fa-circle" style="font-size:0.7rem;"></i> LIVE • Firebase synced (DEMO MODE)</div>
+  <div class="live-indicator"><i class="fas fa-circle" style="font-size:0.7rem;"></i> LIVE • Firebase synced</div>
 
   <datalist id="loco-list"></datalist>
 
@@ -577,7 +557,6 @@
     if (user) {
       authSection.classList.add('hidden');
       appDiv.classList.remove('hidden');
-      document.getElementById('current-user-email').textContent = user.email || 'unknown';
       startRealtimeListeners();
     } else {
       authSection.classList.remove('hidden');
@@ -639,10 +618,10 @@
   // ── Utility functions ───────────────────────────────────────────
   function fillDatalist() {
     const dl = document.getElementById('loco-list');
-    dl.innerHTML = equipment.filter(e => !e.deleted).map(e => `<option value="${e.id}"></option>`).join('');
+    dl.innerHTML = equipment.map(e => `<option value="${e.id}"></option>`).join('');
 
     const job = document.getElementById('job-loco');
-    job.innerHTML = '<option value="">Select Equipment</option>' + equipment.filter(e => !e.deleted).map(e => `<option value="${e.id}">${e.id}</option>`).join('');
+    job.innerHTML = '<option value="">Select Equipment</option>' + equipment.map(e => `<option value="${e.id}">${e.id}</option>`).join('');
 
     const shafts = [
       '0 Shaft','1 Shaft','2 Shaft','3 Shaft','4 Shaft','5 Shaft','6 Shaft','7 Shaft','7A Shaft','8 Shaft','9 Shaft','10 Shaft','10D',
@@ -667,10 +646,7 @@
   }
 
   function getFilteredEquipment() {
-    let filtered = currentShaftFilter 
-      ? equipment.filter(e => (e.shaft || '') === currentShaftFilter) 
-      : equipment;
-    return filtered.filter(e => !e.deleted);
+    return currentShaftFilter ? equipment.filter(e => (e.shaft || '') === currentShaftFilter) : equipment;
   }
 
   function getFilteredUpdates() {
@@ -680,7 +656,7 @@
 
   function getFilteredMaintenance() {
     const ids = getFilteredEquipment().map(e => e.id);
-    return maintenance.filter(m => ids.includes(m.equipment) && !m.deleted);
+    return maintenance.filter(m => ids.includes(m.equipment));
   }
 
   function getFilteredDelays() {
@@ -689,7 +665,7 @@
   }
 
   function getEquipmentStatus(id) {
-    const eu = updates.filter(u => u.equipmentId === id).sort((a,b) => new Date(b.date+' '+b.time) - new Date(a.date+' '+b.time));
+    const eu = updates.filter(u => u.equipmentId === id).sort((a,b) => new Date(b.date+' '+b.time) - new Date(a.date+' '+a.time));
     if (!eu.length) return {status:'Up', downtime:0, availability:'100.0', lastUpdate:'-', color:'green'};
 
     const last = eu[0];
@@ -824,7 +800,7 @@
 
   // ── Other populate functions ────────────────────────────────────
   function populateOperationsReport() {
-    const allIds = equipment.filter(e => !e.deleted).map(e => e.id);
+    const allIds = equipment.map(e => e.id);
     const statusSummary = {Up:0, Down:0};
     const problemRows = [];
     const highRiskRows = [];
@@ -834,7 +810,7 @@
       statusSummary[st.status] = (statusSummary[st.status]||0) + 1;
 
       if (st.status === 'Down') {
-        const eu = updates.filter(u => u.equipmentId === id).sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+b.time));
+        const eu = updates.filter(u => u.equipmentId === id).sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time));
         const lastDown = eu.find(u => u.status === 'Down');
         const color = st.downtime>168?'RED':'ORANGE';
         problemRows.push([id, 'Down', color, lastDown?.reason||'-', st.downtime.toFixed(1)]);
@@ -885,20 +861,25 @@
   function populateLogTable() {
     const tbody = document.querySelector('#log-table tbody');
     const filtered = getFilteredUpdates();
-    tbody.innerHTML = filtered.sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+b.time))
+    tbody.innerHTML = filtered.sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time))
       .map(u => `<tr><td>${u.date}</td><td>${u.time}</td><td>${u.equipmentId}</td><td>${u.status}</td><td>${u.shift}</td><td>${u.reason||''}</td><td>${u.downtimeHours||0}</td><td>${u.isFailure==='1'?'Yes':'No'}</td></tr>`).join('');
   }
 
   function removeEquipment(locoNumber) {
-    if (!confirm(`Soft-delete ${locoNumber}? (Audit trail preserved)`)) return;
+    if (!confirm(`Remove ${locoNumber} and ALL related data?`)) return;
     (async () => {
       try {
-        await updateDoc(doc(db, "equipment", locoNumber), {
-          deleted: true,
-          deletedBy: auth.currentUser?.email,
-          deletedAt: serverTimestamp()
-        });
-        alert('Equipment soft-deleted. Data preserved for audit trail.');
+        await deleteDoc(doc(db, "equipment", locoNumber));
+        const uq = query(collection(db, "status_updates"), where("equipmentId", "==", locoNumber));
+        const usnap = await getDocs(uq);
+        for (let ds of usnap.docs) await deleteDoc(ds.ref);
+        const mq = query(collection(db, "maintenance"), where("equipment", "==", locoNumber));
+        const msnap = await getDocs(mq);
+        for (let ds of msnap.docs) await deleteDoc(ds.ref);
+        const dq = query(collection(db, "delays"), where("equipment", "==", locoNumber));
+        const dsnap = await getDocs(dq);
+        for (let ds of dsnap.docs) await deleteDoc(ds.ref);
+        alert('Equipment and related data removed');
         refreshCurrentView();
       } catch (err) { alert('Error: ' + err.message); }
     })();
@@ -922,10 +903,10 @@
       const failures = eu.filter(u=>u.isFailure==='1').length;
       const mttf = failures>0 ? (opD/failures).toFixed(1) : 'N/A';
       const avail = totalDays>0 ? (opD/totalDays*100).toFixed(1) : 0;
-      const last = eu.sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+b.time))[0];
+      const last = eu.sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time))[0];
       const status = getEquipmentStatus(id).status;
 
-      return `<tr><td>${id}</td><td>${eu.length}</td><td>${totalDays}</td><td>${downD.toFixed(1)}</td><td>${opD.toFixed(1)}</td><td>${failures}</td><td>${mttf}</td><td>${avail}%</td><td>${last?last.date+' '+last.time:'-'}</td><td>${status}</td><td><button class="btn btn-danger" onclick="removeEquipment('${id}')">Soft Delete</button></td></tr>`;
+      return `<tr><td>${id}</td><td>${eu.length}</td><td>${totalDays}</td><td>${downD.toFixed(1)}</td><td>${opD.toFixed(1)}</td><td>${failures}</td><td>${mttf}</td><td>${avail}%</td><td>${last?last.date+' '+last.time:'-'}</td><td>${status}</td><td><button class="btn btn-danger" onclick="removeEquipment('${id}')">Remove</button></td></tr>`;
     }).join('');
   }
 
@@ -935,15 +916,15 @@
 
   function populateMaintTable() {
     const tbody = document.querySelector('#maint-table tbody');
-    tbody.innerHTML = maintenance.filter(m => !m.deleted).map(m => {
+    tbody.innerHTML = maintenance.map(m => {
       const days = calculateDaysLeft(m.lastDone, m.interval);
       const disp = isNaN(days) ? '-' : (days>=0 ? days : Math.abs(days)+' overdue');
-      return `<tr><td>${m.equipment}</td><td>${m.task}</td><td>${m.interval}</td><td>${m.lastDone}</td><td>${calculateNextDue(m.lastDone,m.interval)||'-'}</td><td>${disp}</td><td><button onclick="editMaint('${m.id}')" class="btn btn-primary">Edit</button><button onclick="deleteMaint('${m.id}')" class="btn btn-danger">Soft Delete</button></td></tr>`;
+      return `<tr><td>${m.equipment}</td><td>${m.task}</td><td>${m.interval}</td><td>${m.lastDone}</td><td>${calculateNextDue(m.lastDone,m.interval)||'-'}</td><td>${disp}</td><td><button onclick="editMaint('${m.id}')" class="btn btn-primary">Edit</button><button onclick="deleteMaint('${m.id}')" class="btn btn-danger">Delete</button></td></tr>`;
     }).join('');
   }
 
   function getMaintenanceEvents() {
-    return maintenance.filter(m => !m.deleted).map(task => {
+    return maintenance.map(task => {
       if (!task.lastDone) return null;
       const due = calculateNextDue(task.lastDone, task.interval);
       const days = calculateDaysLeft(task.lastDone, task.interval);
@@ -980,12 +961,8 @@
   }
 
   function deleteMaint(id) {
-    if (confirm('Soft-delete this maintenance task? (Audit preserved)')) {
-      updateDoc(doc(db, "maintenance", id), {
-        deleted: true,
-        deletedBy: auth.currentUser?.email,
-        deletedAt: serverTimestamp()
-      }).then(() => refreshCurrentView());
+    if (confirm('Delete this task?')) {
+      deleteDoc(doc(db, "maintenance", id)).then(() => refreshCurrentView());
     }
   }
 
@@ -1039,8 +1016,8 @@
     const jobLoco = document.getElementById('job-loco').value;
     if (!jobLoco) return alert('Select equipment');
     const equip = equipment.find(e => e.id === jobLoco) || {};
-    const history = updates.filter(u => u.equipmentId === jobLoco).sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+b.time));
-    const maint = maintenance.filter(m => m.equipment === jobLoco && !m.deleted);
+    const history = updates.filter(u => u.equipmentId === jobLoco).sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time));
+    const maint = maintenance.filter(m => m.equipment === jobLoco);
     const st = getEquipmentStatus(jobLoco);
 
     const {jsPDF} = window.jspdf;
@@ -1073,7 +1050,7 @@
     const {jsPDF} = window.jspdf;
     const doc = new jsPDF();
     doc.text("Maintenance Schedule", 20, 20);
-    const data = maintenance.filter(m => !m.deleted).map(m => [m.equipment, m.task, m.interval, m.lastDone, calculateNextDue(m.lastDone,m.interval)||'-', calculateDaysLeft(m.lastDone,m.interval)]);
+    const data = maintenance.map(m => [m.equipment, m.task, m.interval, m.lastDone, calculateNextDue(m.lastDone,m.interval)||'-', calculateDaysLeft(m.lastDone,m.interval)]);
     doc.autoTable({head:[['Equipment','Task','Interval','Last Done','Due','Days Left']], body:data, startY:35});
     doc.save('Maintenance_Schedule.pdf');
   }
@@ -1097,7 +1074,7 @@
     let filtered = updates.filter(u => u.source === 'Imported Breakdown Report');
 
     if (shaftFilter) {
-      const shaftEq = equipment.filter(e => !e.deleted && e.shaft === shaftFilter);
+      const shaftEq = equipment.filter(e => e.shaft === shaftFilter);
       const shaftIds = shaftEq.map(e => e.id);
       filtered = filtered.filter(u =>
         (u.shaft && u.shaft === shaftFilter) ||
@@ -1144,25 +1121,6 @@
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = 'Control_Room_Report.csv';
-    link.click();
-  }
-
-  // ── Full Backup (addresses missing full export) ─────────────────
-  function exportFullBackup() {
-    const backup = {
-      equipment: equipment.filter(e => !e.deleted),
-      status_updates: updates,
-      maintenance: maintenance.filter(m => !m.deleted),
-      delays: delaysData,
-      exportedAt: new Date().toISOString(),
-      exportedBy: auth.currentUser?.email || 'unknown',
-      note: "DEMO backup only – includes soft-deleted records for audit"
-    };
-    const json = JSON.stringify(backup, null, 2);
-    const blob = new Blob([json], {type: 'application/json'});
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `RBE_Full_Backup_${new Date().toISOString().slice(0,10)}.json`;
     link.click();
   }
 
@@ -1283,20 +1241,17 @@
         isFailure: '1',
         source: 'Imported Breakdown Report',
         shaft: selectedShaft || '',
-        createdBy: auth.currentUser?.email || 'unknown',
         createdAt: serverTimestamp()
       };
       await addDoc(collection(db, "status_updates"), importedUpdate);
 
       // Auto-create equipment record if shaft is selected and equipment doesn't exist
-      if (selectedShaft && !equipment.some(e => e.id === equipment && !e.deleted)) {
+      if (selectedShaft && !equipment.some(e => e.id === equipment)) {
         await setDoc(doc(db, "equipment", equipment), {
           shaft: selectedShaft,
           level: 'Imported',
           locoSize: 'N/A',
-          section: 'Imported',
-          createdBy: auth.currentUser?.email || 'unknown',
-          createdAt: serverTimestamp()
+          section: 'Imported'
         }, { merge: true });
       }
       count++;
@@ -1308,7 +1263,7 @@
     document.getElementById('mapping-section').classList.add('hidden');
   }
 
-  // ── Form listeners (with audit fields added where possible) ─────
+  // ── Form listeners ──────────────────────────────────────────────
   document.getElementById('add-eq-form').addEventListener('submit', async e => {
     e.preventDefault();
     const id = document.getElementById('loco-number').value.trim();
@@ -1318,9 +1273,7 @@
       shaft: document.getElementById('shaft').value,
       level: document.getElementById('level').value,
       locoSize: document.getElementById('loco-size').value,
-      section: document.getElementById('section').value,
-      createdBy: auth.currentUser?.email || 'unknown',
-      createdAt: serverTimestamp()
+      section: document.getElementById('section').value
     };
 
     try {
@@ -1344,14 +1297,12 @@
       downtimeHours: Number(document.getElementById('u-downtime').value) || 0,
       isFailure: document.getElementById('u-failure').value,
       source: '',
-      createdBy: auth.currentUser?.email || 'unknown',
       createdAt: serverTimestamp()
     };
 
     if (!data.equipmentId || !data.date || !data.reason) {
       return alert('Required fields missing');
     }
-    if (data.downtimeHours < 0) return alert('Downtime cannot be negative');
 
     try {
       await addDoc(collection(db, "status_updates"), data);
@@ -1369,9 +1320,7 @@
       equipment: document.getElementById('edit-equipment').value,
       task: document.getElementById('edit-task').value,
       interval: document.getElementById('edit-interval').value,
-      lastDone: document.getElementById('edit-last').value,
-      updatedBy: auth.currentUser?.email || 'unknown',
-      updatedAt: serverTimestamp()
+      lastDone: document.getElementById('edit-last').value
     };
     try {
       await updateDoc(doc(db, "maintenance", id), data);
@@ -1389,9 +1338,7 @@
       equipment: f[0].value,
       task: f[1].value,
       interval: f[2].value,
-      lastDone: f[3].value,
-      createdBy: auth.currentUser?.email || 'unknown',
-      createdAt: serverTimestamp()
+      lastDone: f[3].value
     };
     try {
       await addDoc(collection(db, "maintenance"), data);
