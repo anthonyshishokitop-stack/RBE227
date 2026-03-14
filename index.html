@@ -4,230 +4,156 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>RBE Equipment Monitor – Impala Platinum</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/main.min.css' rel='stylesheet' />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
   <style>
     :root {
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --text: #0f172a;
-      --text-2: #475569;
-      --border: #e2e8f0;
-      --primary: #1d4ed8;
-      --primary-dark: #1e40af;
-      --success: #16a34a;
-      --danger: #dc2626;
-      --warning: #ea580c;
+      --bg:        #f8f9fc;
+      --surface:   #ffffff;
+      --surface-2: #f1f5f9;
+      --text:      #0f172a;
+      --text-2:    #475569;
+      --text-3:    #64748b;
+      --border:    #e2e8f0;
+      --primary:   #1d4ed8;
+      --primary-600:#2563eb;
+      --success:   #16a34a;
+      --warning:   #ea580c;
+      --danger:    #dc2626;
+      --info:      #0891b2;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+      --shadow:    0 4px 14px -2px rgba(0,0,0,0.09);
+      --shadow-lg: 0 10px 28px -5px rgba(0,0,0,0.13);
+      --sidebar-width: 280px;
     }
+
     [data-theme="dark"] {
-      --bg: #0f172a;
-      --surface: #1e293b;
-      --text: #f1f5f9;
-      --text-2: #cbd5e1;
-      --border: #475569;
+      --bg:        #0f172a;
+      --surface:   #1e293b;
+      --surface-2: #334155;
+      --text:      #f1f5f9;
+      --text-2:    #cbd5e1;
+      --text-3:    #94a3b8;
+      --border:    #475569;
     }
+
     * { box-sizing:border-box; margin:0; padding:0; }
-    body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      line-height: 1.5;
-    }
+    html, body { height:100%; font-family:'Inter', system-ui, sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }
+    body { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); }
+    [data-theme="dark"] body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+
+    .wrapper { display:flex; min-height:100vh; }
+    .sidebar { width:var(--sidebar-width); background:#1e293b; color:#f8fafc; z-index:1000; overflow-y:auto; box-shadow:4px 0 25px rgba(0,0,0,0.25); flex-shrink:0; transition:transform 0.35s cubic-bezier(0.4,0,0.2,1); }
+    .sidebar-header { padding:1.25rem 1.1rem; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #334155; }
+    .logo-img { max-width:138px; border-radius:8px; }
+    #sidebar-menu { list-style:none; padding:0.8rem 0.5rem; }
+    #sidebar-menu li { padding:0.9rem 1.15rem; margin:0.3rem 0; border-radius:8px; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:12px; color:#e2e8f0; transition:all 0.2s; }
+    #sidebar-menu li i { font-size:1.3rem; width:24px; }
+    #sidebar-menu li:hover, #sidebar-menu li.active { background:#334155; color:white; transform:translateX(4px); }
+    .hamburger { position:fixed; top:14px; left:14px; z-index:1101; width:46px; height:46px; background:#1d4ed8; color:white; border:none; border-radius:50%; font-size:1.45rem; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(29,78,216,0.4); cursor:pointer; }
+    .main { flex:1; padding:1rem; overflow-y:auto; background:var(--bg); }
+    .container { max-width:1800px; margin:0 auto; }
+    .header-bar { background:linear-gradient(135deg, #1d4ed8, #3b82f6); color:white; padding:1.1rem 1.3rem; border-radius:var(--radius-lg) var(--radius-lg) 0 0; margin:-1rem -1rem 1.25rem; display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; align-items:center; box-shadow:var(--shadow); }
+    .header-bar h1 { font-size: clamp(1.35rem, 4.5vw, 1.75rem); font-weight:700; letter-spacing:-0.025em; }
+    h2 { font-size: clamp(1.18rem, 3.8vw, 1.35rem); font-weight:700; color:var(--primary); margin-bottom:1rem; }
+    .card { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:1.25rem; margin-bottom:1.25rem; border:1px solid var(--border); }
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(155px, 1fr)); gap:1rem; margin:1.25rem 0; }
+    .kpi-card { background:linear-gradient(145deg, #ffffff, #f8fafc); border-radius:var(--radius-lg); padding:1.35rem 1rem; text-align:center; box-shadow:var(--shadow); border:1px solid var(--border); transition:transform 0.3s; }
+    .kpi-card:hover { transform:translateY(-5px); }
+    .kpi-card i { font-size: clamp(2.1rem, 5.5vw, 2.6rem); margin-bottom:0.6rem; opacity:0.85; }
+    .kpi-card h2 { font-size: clamp(1.95rem, 6.5vw, 2.55rem); font-weight:800; margin:0 0 0.3rem; }
+    .kpi-card.green  h2 { color:#16a34a; }
+    .kpi-card.orange h2 { color:#ea580c; }
+    .kpi-card.red    h2 { color:#dc2626; }
+    .kpi-card.blue   h2 { color:#1d4ed8; }
+    .kpi-card p { font-size:0.92rem; color:var(--text-3); margin:0; font-weight:500; }
+    .chart-wrapper { background:var(--surface); border-radius:var(--radius-lg); padding:1.25rem; box-shadow:var(--shadow); border:1px solid var(--border); }
+    .chart-title { font-weight:700; color:var(--primary); margin-bottom:1rem; font-size: clamp(1.05rem, 3.2vw, 1.2rem); display:flex; align-items:center; gap:8px; }
+    .chart-container { position:relative; height: clamp(260px, 42vh, 380px); }
+    table { width:100%; border-collapse:separate; border-spacing:0; font-size: clamp(0.86rem, 2.5vw, 0.96rem); margin:1rem 0; background:var(--surface); }
+    th, td { padding: clamp(10px, 2.2vw, 14px) 10px; text-align:left; border-bottom:1px solid var(--border); }
+    th { background:#0f172a; color:white; font-weight:600; position:sticky; top:0; z-index:2; white-space:nowrap; }
+    [data-theme="dark"] th { background:#1e293b; }
+    tbody tr:nth-child(even) { background:var(--surface-2); }
+    tr:hover { background:rgba(29,78,216,0.06); }
+    .btn { padding:0.7rem 1.4rem; border:none; border-radius:var(--radius-md); font-weight:600; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; }
+    .btn-primary { background:var(--primary); color:white; }
+    .btn-primary:hover { background:var(--primary-600); }
+    .btn-success { background:var(--success); color:white; }
+    .btn-danger { background:var(--danger); color:white; }
+    .alert-banner { padding:1.1rem 1.5rem; border-radius:var(--radius-lg); margin:1.25rem 0; border-left:6px solid; box-shadow:var(--shadow-sm); }
+    .alert-high-risk { border-color:var(--danger); color:#991b1b; background:rgba(220,38,38,0.08); }
+    .alert-predictive { border-color:var(--warning); color:#9a3412; background:rgba(234,88,12,0.08); }
+    .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(8px); align-items:center; justify-content:center; z-index:2000; padding:1rem; }
+    .modal.active { display:flex; }
+    .modal-content { background:var(--surface); border-radius:var(--radius-lg); width:100%; max-width:540px; max-height:92vh; overflow-y:auto; box-shadow:var(--shadow-lg); padding:1.5rem; }
+    .form-group { margin-bottom:1.2rem; }
+    label { display:block; font-weight:600; margin-bottom:0.45rem; color:var(--text-2); font-size:0.93rem; }
+    input, select, textarea { width:100%; padding:0.75rem 1rem; border:1px solid var(--border); border-radius:var(--radius-md); font-size:0.95rem; background:var(--surface-2); }
+    input:focus, select:focus, textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(29,78,216,0.15); }
+    .live-indicator { position:fixed; bottom:16px; right:16px; background:#16a34a; color:white; padding:0.55rem 1.1rem; border-radius:999px; font-weight:600; font-size:0.86rem; box-shadow:0 4px 16px rgba(22,163,74,0.4); z-index:999; display:flex; align-items:center; gap:6px; }
     .hidden { display: none !important; }
-    .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
-    .header {
-      background: linear-gradient(135deg, var(--primary), #3b82f6);
-      color: white;
-      padding: 1.25rem 2rem;
-      border-radius: 12px 12px 0 0;
-      margin: -1.5rem -1.5rem 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-    .card {
-      background: var(--surface);
-      border-radius: 12px;
-      box-shadow: 0 4px 14px -2px rgba(0,0,0,0.1);
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      border: 1px solid var(--border);
-    }
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 1.25rem;
-      margin: 1.5rem 0;
-    }
-    .kpi {
-      background: linear-gradient(145deg, white, #f8fafc);
-      border-radius: 12px;
-      padding: 1.4rem;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-    .kpi h2 { font-size: 2.6rem; font-weight: 800; margin: 0.4rem 0; }
-    .kpi.green h2  { color: var(--success); }
-    .kpi.orange h2 { color: var(--warning); }
-    .kpi.red h2    { color: var(--danger); }
-    .kpi.blue h2   { color: var(--primary); }
-    .btn {
-      padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-primary:hover { background: var(--primary-dark); }
-    .btn-danger { background: var(--danger); color: white; }
-    .btn-disabled {
-      background: #94a3b8 !important;
-      color: #e2e8f0 !important;
-      cursor: not-allowed !important;
-    }
-    .readonly-notice {
-      background: #fef3c7;
-      color: #92400e;
-      padding: 1rem 1.5rem;
-      border-radius: 8px;
-      margin: 1rem 0;
-      border-left: 5px solid #d97706;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.95rem;
-    }
-    th, td {
-      padding: 12px 14px;
-      text-align: left;
-      border-bottom: 1px solid var(--border);
-    }
-    th {
-      background: #0f172a;
-      color: white;
-      font-weight: 600;
-    }
-    form .form-group {
-      margin-bottom: 1.25rem;
-    }
-    label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 0.45rem;
-      color: var(--text-2);
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 0.97rem;
-    }
-    .auth-box {
-      max-width: 460px;
-      margin: 4rem auto;
-      padding: 2.5rem 2rem;
-      background: var(--surface);
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-    }
-    .sidebar {
-      width: 260px;
-      background: #1e293b;
-      color: #f1f5f9;
-      height: 100vh;
-      position: fixed;
-      left: 0;
-      top: 0;
-      overflow-y: auto;
-      transition: transform 0.3s;
-      z-index: 100;
-    }
-    .sidebar-header {
-      padding: 1.25rem;
-      border-bottom: 1px solid #334155;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .sidebar-menu {
-      list-style: none;
-      padding: 1rem 0.5rem;
-    }
-    .sidebar-menu li {
-      padding: 0.9rem 1.2rem;
-      margin: 0.3rem 0;
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      transition: all 0.2s;
-    }
-    .sidebar-menu li:hover, .sidebar-menu li.active {
-      background: #334155;
-    }
-    .main-content {
-      margin-left: 260px;
-      padding: 1.5rem;
-    }
-    .hamburger {
-      display: none;
-      position: fixed;
-      top: 16px;
-      left: 16px;
-      z-index: 110;
-      width: 48px;
-      height: 48px;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      font-size: 1.5rem;
-      cursor: pointer;
+    .readonly-notice { background:#fef3c7; color:#92400e; padding:1rem 1.5rem; border-radius:8px; margin:1rem 0; border-left:5px solid #d97706; font-weight:500; }
+
+    @media (min-width: 1025px) {
+      .sidebar { position: sticky; top: 0; height: 100vh; transform: translateX(0) !important; }
+      .hamburger, #theme-toggle { display: none; }
+      .main { padding: 1.5rem 2rem; }
     }
     @media (max-width: 1024px) {
-      .sidebar { transform: translateX(-100%); }
+      .sidebar { position: fixed; inset: 0 auto 0 0; width: 82vw; max-width: 300px; transform: translateX(-100%); }
       .sidebar.open { transform: translateX(0); }
-      .main-content { margin-left: 0; }
-      .hamburger { display: block; }
+      .main { padding-top: 74px; }
+      .header-bar { flex-direction: column; align-items: flex-start; gap: 0.9rem; }
     }
+    @media (max-width: 640px) {
+      .kpi-grid { grid-template-columns: 1fr; gap: 0.9rem; }
+      .chart-container { height: 240px; }
+      .header-bar h1 { font-size: 1.32rem; }
+      table { font-size: 0.85rem; }
+      th, td { padding: 9px 8px; }
+      .btn { padding: 0.65rem 1.25rem; }
+      .modal-content { padding: 1.2rem; }
+    }
+
+    /* Auth styling */
+    #auth-section { max-width:460px; margin:4rem auto; padding:2.5rem 2rem; background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); }
   </style>
 </head>
 <body>
 
-<div class="auth-box" id="auth-screen">
-  <h2 id="auth-title" style="text-align:center; margin-bottom:2rem;">Sign In</h2>
+<!-- Authentication -->
+<div id="auth-section">
+  <h2 id="auth-title" style="text-align:center;margin-bottom:2rem;">Sign In</h2>
 
   <form id="auth-form">
     <div class="form-group">
       <label>Email</label>
-      <input type="email" id="email" required autocomplete="email">
+      <input id="email" type="email" required autocomplete="email">
     </div>
     <div class="form-group">
       <label>Password</label>
-      <input type="password" id="password" required autocomplete="current-password">
+      <input id="password" type="password" required autocomplete="current-password">
     </div>
 
     <div id="register-extra" class="hidden">
       <div class="form-group">
         <label>Full Name</label>
-        <input type="text" id="reg-name" required>
+        <input id="reg-name" type="text" required>
       </div>
       <div class="form-group">
         <label>Role</label>
@@ -235,477 +161,1381 @@
           <option value="">— select role —</option>
           <option value="admin">Admin (shaft level)</option>
           <option value="user">View-only user</option>
+          <option value="developer">Master Developer (full access – all shafts)</option>
         </select>
       </div>
       <div class="form-group">
         <label>Shaft / Operation</label>
         <select id="reg-shaft" required>
           <option value="">— select shaft —</option>
-          <option>1 Shaft</option><option>2 Shaft</option><option>4 Shaft</option>
-          <option>5 Shaft</option><option>6 Shaft</option><option>7 Shaft</option>
-          <option>8 Shaft</option><option>9 Shaft</option><option>10 Shaft</option>
-          <option>11 Shaft</option><option>12 Shaft</option><option>14 Shaft</option>
-          <option>16 Shaft</option><option>20 Shaft</option>
+          <option>0 Shaft</option><option>1 Shaft</option><option>2 Shaft</option><option>3 Shaft</option><option>4 Shaft</option>
+          <option>5 Shaft</option><option>6 Shaft</option><option>7 Shaft</option><option>7A Shaft</option><option>8 Shaft</option>
+          <option>9 Shaft</option><option>10 Shaft</option><option>10D</option><option>11 Shaft</option><option>11C Shaft</option>
+          <option>11D</option><option>12 Shaft</option><option>12 North Shaft</option><option>12S</option><option>14 Shaft</option>
+          <option>14D</option><option>16 Shaft</option><option>17 Shaft</option><option>20 Shaft</option>
+          <option>CLAPHAM</option><option>DRIKOP</option><option>E&F Shaft</option><option>NORTH SHAFT</option>
+          <option>SOUTH SHAFT</option><option>STYLDRIFT</option><option>Winnaarshoek</option><option>Forest Hill</option>
+          <option>Offset Underground</option><option>UG2 Main Decline</option><option>Merensky Main Decline</option>
+          <option>UG2 North Decline</option><option>367-KT (Kalkfontein)</option><option>368-KT (Buffelshoek)</option>
+          <option>370-KT (Richmond)</option><option>372-KT (Dwarsrivier)</option><option>373-KT (De Grooteboom)</option>
+          <option>374-KT (Tweefontein)</option><option>Leeuwkop Shaft</option>
         </select>
       </div>
     </div>
 
-    <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1.5rem; padding:1rem;" id="auth-submit-btn">Sign In</button>
+    <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1.5rem;padding:1rem;" id="auth-submit">Sign In</button>
   </form>
 
   <p style="text-align:center; margin-top:1.5rem;">
     <a href="#" id="toggle-register" style="color:var(--primary); font-weight:500;">Create new account</a>
   </p>
 
-  <p id="auth-message" style="color:#dc2626; text-align:center; min-height:1.5em; margin-top:1rem;"></p>
+  <p id="auth-error" style="color:var(--danger); text-align:center; min-height:1.3em; margin-top:1rem;"></p>
 </div>
 
+<!-- Main Application -->
 <div id="app" class="hidden">
-  <button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
 
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div style="font-weight:700; font-size:1.2rem;">RBE Monitor</div>
-      <button onclick="document.querySelector('.sidebar').classList.remove('open')" style="background:none;border:none;color:white;font-size:1.8rem;cursor:pointer;">×</button>
-    </div>
-    <div id="current-user-info" style="padding:1rem; font-size:0.95rem; opacity:0.9;"></div>
-    <ul class="sidebar-menu" id="sidebar-menu"></ul>
-  </aside>
+  <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+  <button id="theme-toggle" onclick="toggleTheme()" style="position:fixed;top:14px;right:14px;z-index:1101;width:46px;height:46px;background:#64748b;color:white;border:none;border-radius:50%;font-size:1.35rem;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(100,116,139,0.4);">☀️</button>
+  <button id="logout-btn" style="position:fixed;top:14px;right:70px;z-index:1102;padding:0.6rem 1.2rem;background:var(--danger);color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(220,38,38,0.4);">Logout</button>
 
-  <main class="main-content">
-    <div class="container">
+  <div class="wrapper">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <img class="logo-img" src="https://apventures.com/wp-content/uploads/2023/06/image-35.jpeg" alt="Impala Platinum">
+        <button onclick="document.getElementById('sidebar').classList.remove('open')" style="background:none;border:none;color:white;font-size:2.3rem;cursor:pointer;">×</button>
+      </div>
+      <div id="current-user-info" style="padding:0.8rem 1.1rem;font-size:0.92rem;opacity:0.9;border-bottom:1px solid #334155;"></div>
+      <ul id="sidebar-menu"></ul>
+    </aside>
 
-      <!-- Dashboard -->
-      <section id="view-dashboard" class="section">
-        <div class="header">
-          <h1>Dashboard — <span id="shaft-name-display">All visible shafts</span></h1>
-        </div>
-        <div id="readonly-warning" class="readonly-notice hidden">
-          <strong>View-only mode active</strong> — you can see data but cannot add, edit or delete records.
-        </div>
-        <div class="kpi-grid" id="kpi-tiles"></div>
-        <div class="card">
-          <h3 style="margin-bottom:1rem;">Availability Trend (last units)</h3>
-          <div style="height:320px;"><canvas id="availChart"></canvas></div>
-        </div>
-      </section>
+    <main class="main">
+      <div class="container">
 
-      <!-- Add Equipment -->
-      <section id="view-add-equipment" class="section hidden">
-        <div class="header"><h1>Add New Equipment</h1></div>
-        <div class="card">
-          <form id="form-add-equipment">
-            <div class="form-group">
-              <label>Shaft</label>
-              <select id="eq-shaft" required></select>
+        <!-- DASHBOARD -->
+        <section id="dashboard">
+          <div class="header-bar">
+            <h1>Real-time RBE Monitoring – Platinum Operations <span id="shaft-name-display" style="font-size:0.95rem;opacity:0.85;"></span></h1>
+            <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
+              <select id="shaft-filter" onchange="filterDashboard()">
+                <option value="">All Shafts</option>
+              </select>
+              <button class="btn btn-primary" onclick="exportDashboardPDF()"><i class="fas fa-file-pdf"></i> Export Dashboard PDF</button>
             </div>
-            <div class="form-group">
-              <label>Equipment ID</label>
-              <input type="text" id="eq-id" required placeholder="e.g. L1234">
-            </div>
-            <div class="form-group">
-              <label>Location / Level</label>
-              <input type="text" id="eq-level" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Save Equipment</button>
+          </div>
+
+          <div id="readonly-warning" class="readonly-notice hidden">
+            <strong>View-only mode active</strong> — you can see data but cannot add, edit or delete records.
+          </div>
+
+          <div id="high-risk-alerts" class="alert-banner alert-high-risk hidden">
+            <strong><i class="fas fa-triangle-exclamation"></i> High Risk / Long Downtime Equipment</strong>
+            <ul id="high-risk-list" style="margin-top:0.85rem;list-style:none;padding-left:0;"></ul>
+          </div>
+
+          <div id="predictive-alerts" class="alert-banner alert-predictive hidden">
+            <strong><i class="fas fa-bell"></i> Predictive Maintenance – Due Soon / Overdue</strong>
+            <ul id="predictive-list" style="margin-top:0.85rem;list-style:none;padding-left:0;"></ul>
+          </div>
+
+          <div class="kpi-grid" id="kpi-grid"></div>
+
+          <div class="card chart-wrapper">
+            <div class="chart-title"><i class="fas fa-chart-bar"></i> Fleet Availability (%)</div>
+            <div class="chart-container"><canvas id="availabilityChart"></canvas></div>
+          </div>
+
+          <div class="card chart-wrapper">
+            <div class="chart-title"><i class="fas fa-exclamation-triangle"></i> Failure Count by Equipment</div>
+            <div class="chart-container"><canvas id="failuresChart"></canvas></div>
+          </div>
+
+          <div class="card chart-wrapper">
+            <div class="chart-title"><i class="fas fa-clock"></i> Mean Time To Failure (Days)</div>
+            <div class="chart-container"><canvas id="mttfChart"></canvas></div>
+          </div>
+
+          <div class="card chart-wrapper">
+            <div class="chart-title"><i class="fas fa-chart-pie"></i> Delay Reasons – Current Week</div>
+            <div class="chart-container"><canvas id="delayChart"></canvas></div>
+          </div>
+
+          <div class="card" style="border-left:6px solid var(--info);">
+            <h2><i class="fas fa-wrench"></i> Upcoming & Overdue Maintenance</h2>
+            <div id="maintenance-list" style="display:grid;gap:1rem;font-size:0.98rem;"></div>
+          </div>
+        </section>
+
+        <!-- ADD EQUIPMENT -->
+        <section id="add-equipment" class="hidden">
+          <div class="header-bar"><h1>Add New Equipment</h1></div>
+          <form id="add-eq-form" style="max-width:600px;margin:0 auto;">
+            <div class="form-group"><label>Operation (Shaft)</label><select id="shaft" required><option value="">Select Shaft</option></select></div>
+            <div class="form-group"><label>Work Place</label><input id="level" type="text" required></div>
+            <div class="form-group"><label>Equipment Size</label><input id="loco-size" type="text" required></div>
+            <div class="form-group"><label>Equipment ID</label><input id="loco-number" type="text" required></div>
+            <div class="form-group"><label>SECTION</label><input id="section" type="text" required></div>
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;">Add Equipment</button>
           </form>
-        </div>
-      </section>
+        </section>
 
-      <!-- Log Status -->
-      <section id="view-log-status" class="section hidden">
-        <div class="header"><h1>Log Status Update</h1></div>
-        <div class="card">
-          <form id="form-log-status">
-            <div class="form-group">
-              <label>Equipment ID</label>
-              <input list="eq-list" id="log-eq-id" required>
+        <!-- STATUS UPDATE -->
+        <section id="add-status" class="hidden">
+          <div class="header-bar"><h1>Status Update</h1></div>
+          <form id="add-status-form" style="max-width:600px;margin:0 auto;">
+            <div class="form-group"><label>Date</label><input id="u-date" type="date" required></div>
+            <div class="form-group"><label>Time</label><input id="u-time" type="time" required></div>
+            <div class="form-group"><label>Equipment ID</label><input id="u-loco" list="loco-list" required></div>
+            <div class="form-group"><label>Status</label><select id="u-status"><option>Fixed</option><option>Down</option></select></div>
+            <div class="form-group"><label>Shift</label><select id="u-shift"><option>Morning</option><option>Afternoon</option><option>Night</option></select></div>
+            <div class="form-group"><label>Reason/Fault</label><textarea id="u-reason" required></textarea></div>
+            <div class="form-group"><label>Downtime Hours</label><input id="u-downtime" type="number" step="0.1" min="0"></div>
+            <div class="form-group"><label>Is Failure?</label><select id="u-failure"><option value="0">No</option><option value="1">Yes</option></select></div>
+            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;">Submit Update</button>
+          </form>
+        </section>
+
+        <!-- SEARCH -->
+        <section id="search-status" class="hidden">
+          <div class="header-bar"><h1>Search Status</h1></div>
+          <form id="search-form" style="max-width:800px;margin:0 auto;">
+            <div class="form-group"><label>Equipment ID</label><input id="s-loco" list="loco-list"></div>
+            <div class="form-group"><label>Date (optional)</label><input id="s-date" type="date"></div>
+            <div class="form-group"><label>Job Order Equipment</label><select id="job-loco"><option value="">Select Equipment</option></select></div>
+            <div style="margin:1rem 0;display:flex;align-items:center;gap:8px;">
+              <input type="checkbox" id="show-all-history">
+              <label for="show-all-history" style="margin:0;font-weight:600;">Show Full History</label>
             </div>
-            <div class="form-group">
-              <label>Date</label>
-              <input type="date" id="log-date" required>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <button type="submit" class="btn btn-primary">Search</button>
+              <button type="button" class="btn btn-info" onclick="generateJobPDF()"><i class="fas fa-file-pdf"></i> Job Order PDF</button>
             </div>
-            <div class="form-group">
-              <label>Status</label>
-              <select id="log-status" required>
-                <option>Up</option>
-                <option>Down</option>
-                <option>Fixed</option>
+          </form>
+          <div id="search-results" style="margin-top:2rem;"></div>
+        </section>
+
+        <!-- FULL LOG -->
+        <section id="status-log" class="hidden">
+          <div class="header-bar">
+            <h1>Full Status Log</h1>
+            <button class="btn btn-primary" onclick="exportLogCSV()"><i class="fas fa-file-csv"></i> Export Log (CSV)</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table id="log-table">
+              <thead><tr><th>Date</th><th>Time</th><th>ID</th><th>Status</th><th>Shift</th><th>Fault</th><th>Down Hrs</th><th>Failure</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- SUMMARY -->
+        <section id="summary" class="hidden">
+          <div class="header-bar">
+            <h1>Fleet Analytics</h1>
+            <button class="btn btn-primary" onclick="exportSummaryPDF()"><i class="fas fa-file-pdf"></i> Export Fleet Summary (PDF)</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table id="summary-table">
+              <thead>
+                <tr>
+                  <th>ID</th><th>Updates</th><th>Total Days</th><th>Down Days</th><th>Op Days</th><th>Failures</th><th>MTTF</th><th>Avail %</th><th>Last Update</th><th>Status</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- MANAGE EQUIPMENT -->
+        <section id="manage-equipment" class="hidden">
+          <div class="header-bar">
+            <h1>Equipment List</h1>
+            <button class="btn btn-primary" onclick="exportEquipmentPDF()"><i class="fas fa-file-pdf"></i> Export Register PDF</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table id="equipment-table">
+              <thead><tr><th>Operation</th><th>Work Place</th><th>Equipment Size</th><th>Equipment ID</th><th>SECTION</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- MAINTENANCE SCHEDULE -->
+        <section id="maintenance-schedule" class="hidden">
+          <div class="header-bar">
+            <h1>Maintenance Schedule</h1>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="document.getElementById('add-maint-modal').classList.add('active')">+ Add Task</button>
+              <button class="btn btn-primary" onclick="exportMaintPDF()"><i class="fas fa-file-pdf"></i> Export PDF</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table id="maint-table">
+              <thead><tr><th>Equipment</th><th>Task</th><th>Interval</th><th>Last Done</th><th>Due</th><th>Days Left</th><th>Actions</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- CALENDAR -->
+        <section id="calendar" class="hidden">
+          <div class="header-bar"><h1>Maintenance Calendar</h1></div>
+          <div id="calendar-div" style="background:var(--surface);padding:2rem;border-radius:var(--radius-lg);box-shadow:var(--shadow);border:1px solid var(--border);"></div>
+        </section>
+
+        <!-- OPERATIONS REPORT -->
+        <section id="operations-report" class="hidden">
+          <div class="header-bar">
+            <h1>All Operations Report</h1>
+            <button class="btn btn-primary" onclick="exportOperationsReportPDF()"><i class="fas fa-file-pdf"></i> Export Report (PDF)</button>
+          </div>
+          <h2 style="color:var(--info);"><i class="fas fa-chart-line"></i> Operation Status</h2>
+          <div style="overflow-x:auto;">
+            <table id="op-status-table">
+              <thead><tr><th>Status</th><th>Count</th><th>Percentage</th></tr></thead>
+              <tbody id="op-status-tbody"></tbody>
+            </table>
+          </div>
+          <h2 style="color:var(--info);"><i class="fas fa-exclamation-triangle"></i> Problem Equipment</h2>
+          <div style="overflow-x:auto;">
+            <table id="problem-equipment-table">
+              <thead><tr><th>Equipment ID</th><th>Status</th><th>Color</th><th>Last Reason/Fault</th><th>Total Downtime Hours</th></tr></thead>
+              <tbody id="problem-equipment-tbody"></tbody>
+            </table>
+          </div>
+          <h2 style="color:var(--info);"><i class="fas fa-fire"></i> Focus Areas: High Risk Equipment</h2>
+          <div style="overflow-x:auto;">
+            <table id="high-risk-table">
+              <thead><tr><th>Equipment ID</th><th>Number of Failures</th><th>MTTF (Days)</th><th>Availability %</th></tr></thead>
+              <tbody id="high-risk-tbody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- IMPORT SPREADSHEET -->
+        <section id="import-spreadsheet" class="hidden">
+          <div class="header-bar">
+            <h1>Import Breakdown Report (Excel)</h1>
+          </div>
+          <div class="card">
+            <p><strong>Upload Report.xlsx</strong><br>Only the <strong>Breakdown Report</strong> sheet will be processed.<br>Data will be mapped and merged into the live RBE status log.</p>
+            <div class="form-group" style="max-width:500px; margin:1.5rem 0;">
+              <label><strong>Shaft for this import batch</strong> (recommended)</label>
+              <select id="import-shaft">
+                <option value="">Do not set shaft (use equipment lookup)</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>Reason / Comment</label>
-              <textarea id="log-reason" rows="3"></textarea>
+            <input type="file" id="excel-file" accept=".xlsx,.xls" style="margin:1rem 0;display:block;width:100%;">
+            <button class="btn btn-primary" onclick="handleFileUpload()" style="width:100%;">📤 Parse Excel & Start Mapping</button>
+          </div>
+
+          <div id="mapping-section" class="card hidden">
+            <h2>Map Columns to RBE Fields</h2>
+            <div id="mapping-form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;"></div>
+            <button class="btn btn-primary" onclick="previewImport()" style="margin-top:1.5rem;width:100%;">Preview Mapped Data & Select Rows</button>
+          </div>
+
+          <div id="preview-section" class="card hidden">
+            <h2>Preview & Select Rows to Import</h2>
+            <div style="overflow-x:auto;max-height:420px;" id="preview-table"></div>
+            <div style="margin-top:1rem;display:flex;gap:1rem;">
+              <button class="btn btn-success" onclick="importSelectedRows()" style="flex:1;">✅ Import Selected Rows to System</button>
+              <button class="btn btn-danger" onclick="document.getElementById('preview-section').classList.add('hidden')" style="flex:1;">Cancel</button>
             </div>
-            <button type="submit" class="btn btn-primary">Submit Update</button>
-          </form>
-        </div>
-      </section>
+          </div>
+        </section>
 
-      <!-- Status Log -->
-      <section id="view-status-log" class="section hidden">
-        <div class="header">
-          <h1>Status Log</h1>
-        </div>
-        <div class="card" style="padding:0; overflow-x:auto;">
-          <table id="log-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Equipment</th>
-                <th>Status</th>
-                <th>Reason</th>
-              </tr>
-            </thead>
-            <tbody id="log-tbody"></tbody>
-          </table>
-        </div>
-      </section>
+        <!-- CONTROL ROOM REPORT -->
+        <section id="control-room" class="hidden">
+          <div class="header-bar">
+            <h1>Control Room Report – Imported Breakdowns</h1>
+            <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
+              <div>
+                <label style="margin-right:8px;font-weight:600;color:white;">Filter by Shaft:</label>
+                <select id="cr-shaft-filter" onchange="filterControlRoomReport()">
+                  <option value="">All Shafts</option>
+                </select>
+              </div>
+              <div>
+                <label style="margin-right:8px;font-weight:600;color:white;">Filter by Date:</label>
+                <input type="date" id="cr-date-filter" onchange="filterControlRoomReport()" style="background:white;color:#0f172a;padding:0.6rem 1rem;border-radius:8px;border:1px solid #e2e8f0;">
+              </div>
+              <button class="btn btn-primary" onclick="exportControlRoomCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table id="control-room-table">
+              <thead><tr><th>Date</th><th>Time</th><th>Equipment ID</th><th>Status</th><th>Shift</th><th>Reason/Fault</th><th>Downtime Hrs</th><th>Failure</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
 
-      <!-- Summary -->
-      <section id="view-summary" class="section hidden">
-        <div class="header">
-          <h1>Fleet Summary</h1>
-        </div>
-        <div class="card" style="padding:0; overflow-x:auto;">
-          <table id="summary-table">
-            <thead>
-              <tr>
-                <th>Equipment</th>
-                <th>Shaft</th>
-                <th>Location</th>
-                <th>Last Status</th>
-                <th>Last Update</th>
-              </tr>
-            </thead>
-            <tbody id="summary-tbody"></tbody>
-          </table>
-        </div>
-      </section>
+      </div>
+    </main>
+  </div>
 
+  <div class="live-indicator"><i class="fas fa-circle" style="font-size:0.7rem;"></i> LIVE • Firebase synced</div>
+
+  <datalist id="loco-list"></datalist>
+
+  <!-- MODALS -->
+  <div id="edit-modal" class="modal">
+    <div class="modal-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
+        <h3>Edit Maintenance Task</h3>
+        <button onclick="document.getElementById('edit-modal').classList.remove('active')" style="background:none;border:none;font-size:1.6rem;cursor:pointer;color:var(--text);">×</button>
+      </div>
+      <form id="edit-maint-form">
+        <input type="hidden" id="edit-index">
+        <div class="form-group"><label>Equipment ID</label><input id="edit-equipment" list="loco-list" required></div>
+        <div class="form-group"><label>Task</label><input id="edit-task" type="text" required></div>
+        <div class="form-group"><label>Interval</label><select id="edit-interval"><option>weekly</option><option>monthly</option><option>quarterly</option></select></div>
+        <div class="form-group"><label>Last Done</label><input id="edit-last" type="date" required></div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </form>
     </div>
-  </main>
+  </div>
+
+  <div id="add-maint-modal" class="modal">
+    <div class="modal-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;">
+        <h3>Add Maintenance Task</h3>
+        <button onclick="document.getElementById('add-maint-modal').classList.remove('active')" style="background:none;border:none;font-size:1.6rem;cursor:pointer;color:var(--text);">×</button>
+      </div>
+      <form id="add-maint-form">
+        <div class="form-group"><label>Equipment ID</label><input list="loco-list" required></div>
+        <div class="form-group"><label>Task</label><input type="text" required></div>
+        <div class="form-group"><label>Interval</label><select><option>weekly</option><option>monthly</option><option>quarterly</option></select></div>
+        <div class="form-group"><label>Last Done</label><input id="m-last" type="date" required></div>
+        <button type="submit" class="btn btn-primary">Add Task</button>
+      </form>
+    </div>
+  </div>
+
 </div>
 
-<datalist id="eq-list"></datalist>
+<script type="module">
+  // ────────────────────────────────────────────────
+  // Firebase v10 Modular
+  // ────────────────────────────────────────────────
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+  import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, serverTimestamp, query, orderBy, deleteDoc, updateDoc, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-<script>
-// ────────────────────────────────────────────────
-//  Firebase Config
-// ────────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyCnDsQVhQxk9Q7axCPcMSpHDcqOonBbNMc",
-  authDomain: "rbe-equipment.firebaseapp.com",
-  projectId: "rbe-equipment",
-  storageBucket: "rbe-equipment.firebasestorage.app",
-  messagingSenderId: "481759813476",
-  appId: "1:481759813476:web:ef176ffa73fb65e01ca471"
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyCnDsQVhQxk9Q7axCPcMSpHDcqOonBbNMc",
+    authDomain: "rbe-equipment.firebaseapp.com",
+    projectId: "rbe-equipment",
+    storageBucket: "rbe-equipment.firebasestorage.app",
+    messagingSenderId: "481759813476",
+    appId: "1:481759813476:web:ef176ffa73fb65e01ca471",
+    measurementId: "G-15E0HZJ2X6"
+  };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-// ────────────────────────────────────────────────
-//  State
-// ────────────────────────────────────────────────
-let currentUserData = null;
-let isAdmin = false;
-let userShaft = null;
-let equipmentList = [];
+  // ────────────────────────────────────────────────
+  // State
+  // ────────────────────────────────────────────────
+  let equipment = [];
+  let updates = [];
+  let maintenance = [];
+  let delaysData = [];
+  let currentShaftFilter = '';
+  let charts = {};
+  let calendar = null;
+  let excelData = [];
+  let columnHeaders = [];
+  let selectedMapping = {};
+  let currentUserData = null;
+  let isDeveloper = false;
+  let isAdmin = false;
+  let isViewOnly = false;
+  let userShaft = null;
 
-// ────────────────────────────────────────────────
-//  Auth UI logic
-// ────────────────────────────────────────────────
-document.getElementById('toggle-register').onclick = e => {
-  e.preventDefault();
-  const extra = document.getElementById('register-extra');
-  const title = document.getElementById('auth-title');
-  const btn = document.getElementById('auth-submit-btn');
-  const link = document.getElementById('toggle-register');
+  // ── Auth UI ─────────────────────────────────────────────────────
+  const authSection = document.getElementById('auth-section');
+  const appDiv = document.getElementById('app');
+  const authForm = document.getElementById('auth-form');
+  const authTitle = document.getElementById('auth-title');
+  const authSubmit = document.getElementById('auth-submit');
+  const toggleLink = document.getElementById('toggle-register');
+  const authError = document.getElementById('auth-error');
+  const registerExtra = document.getElementById('register-extra');
 
-  if (extra.classList.contains('hidden')) {
-    extra.classList.remove('hidden');
-    title.textContent = "Create Account";
-    btn.textContent = "Register";
-    link.textContent = "Back to Sign In";
-  } else {
-    extra.classList.add('hidden');
-    title.textContent = "Sign In";
-    btn.textContent = "Sign In";
-    link.textContent = "Create new account";
-  }
-};
+  let isLoginMode = true;
 
-document.getElementById('auth-form').onsubmit = async e => {
-  e.preventDefault();
-  const email = document.getElementById('email').value.trim();
-  const pass = document.getElementById('password').value;
-  const msg = document.getElementById('auth-message');
+  toggleLink.onclick = e => {
+    e.preventDefault();
+    isLoginMode = !isLoginMode;
+    authTitle.textContent = isLoginMode ? "Sign In" : "Create Account";
+    authSubmit.textContent = isLoginMode ? "Sign In" : "Register";
+    toggleLink.textContent = isLoginMode ? "Create new account" : "Already have an account? Sign in";
+    registerExtra.classList.toggle('hidden');
+  };
 
-  msg.textContent = "";
+  authForm.onsubmit = async e => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    authError.textContent = "";
 
-  try {
-    let userCredential;
+    try {
+      let userCredential;
+      if (isLoginMode) {
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        const name = document.getElementById('reg-name').value.trim();
+        const role = document.getElementById('reg-role').value;
+        const shaft = document.getElementById('reg-shaft').value;
 
-    if (document.getElementById('register-extra').classList.contains('hidden')) {
-      // Login
-      userCredential = await auth.signInWithEmailAndPassword(email, pass);
+        if (!name || !role || !shaft) throw new Error("Please fill all fields");
+
+        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+        await setDoc(doc(db, "user_profiles", userCredential.user.uid), {
+          name,
+          email,
+          role,
+          shaft,
+          createdAt: serverTimestamp()
+        });
+      }
+    } catch (err) {
+      let msg = err.message;
+      if (msg.includes('wrong-password')) msg = 'Wrong password';
+      else if (msg.includes('user-not-found')) msg = 'Account not found';
+      else if (msg.includes('email-already-in-use')) msg = 'Email already in use';
+      else if (msg.includes('weak-password')) msg = 'Password too weak';
+      authError.textContent = msg;
+    }
+  };
+
+  document.getElementById('logout-btn').onclick = () => signOut(auth);
+
+  // ── Main auth listener with role enforcement
+  onAuthStateChanged(auth, async user => {
+    if (user) {
+      authSection.classList.add('hidden');
+      appDiv.classList.remove('hidden');
+
+      const profileSnap = await getDoc(doc(db, "user_profiles", user.uid));
+      if (profileSnap.exists()) {
+        currentUserData = profileSnap.data();
+        const role = currentUserData.role || "user";
+
+        isDeveloper = role === "developer";
+        isAdmin = role === "admin" || isDeveloper;
+        isViewOnly = role === "user";
+        userShaft = isDeveloper ? null : (currentUserData.shaft || null);
+
+        document.getElementById('current-user-info').innerHTML = `
+          ${currentUserData.name || user.email}<br>
+          <small>${isDeveloper ? 'Master Developer' : isAdmin ? 'Admin' : 'View-only'} • ${userShaft || 'All Shafts'}</small>
+        `;
+
+        if (isViewOnly) {
+          document.getElementById('readonly-warning').classList.remove('hidden');
+        }
+
+        buildMenu();
+        fillDatalist();
+        startRealtimeListeners();
+        show('dashboard');
+      } else {
+        alert("User profile not found. Contact administrator.");
+        signOut(auth);
+      }
     } else {
-      // Register
-      const name  = document.getElementById('reg-name').value.trim();
-      const role  = document.getElementById('reg-role').value;
-      const shaft = document.getElementById('reg-shaft').value;
+      authSection.classList.remove('hidden');
+      appDiv.classList.add('hidden');
+      // Reset state
+      currentUserData = null;
+      isDeveloper = false;
+      isAdmin = false;
+      isViewOnly = false;
+      userShaft = null;
+    }
+  });
 
-      if (!name || !role || !shaft) {
-        throw new Error("Please fill all fields");
+  // ── Dynamic Menu (role-based)
+  function buildMenu() {
+    const menu = document.getElementById('sidebar-menu');
+    menu.innerHTML = '';
+
+    const allItems = [
+      {id:'dashboard', icon:'tachometer-alt', label:'Dashboard'},
+      {id:'search-status', icon:'search', label:'Search History'},
+      {id:'status-log', icon:'list', label:'Full Log'},
+      {id:'summary', icon:'chart-bar', label:'Fleet Summary'},
+      {id:'operations-report', icon:'file-alt', label:'Operations Report'},
+      {id:'control-room', icon:'clipboard-list', label:'Control Room Report'}
+    ];
+
+    const adminItems = [
+      {id:'add-equipment', icon:'plus-circle', label:'+ New Equipment'},
+      {id:'add-status', icon:'edit', label:'Log Status Update'},
+      {id:'manage-equipment', icon:'tools', label:'Equipment Register'},
+      {id:'maintenance-schedule', icon:'calendar-check', label:'Maintenance Plan'},
+      {id:'calendar', icon:'calendar', label:'Calendar'},
+      {id:'import-spreadsheet', icon:'file-upload', label:'Import Down Report'}
+    ];
+
+    let visibleItems = [...allItems];
+    if (isAdmin || isDeveloper) {
+      visibleItems = [...adminItems, ...allItems];
+    }
+
+    visibleItems.forEach(item => {
+      const li = document.createElement('li');
+      li.innerHTML = `<i class="fas fa-${item.icon}"></i><span>${item.label}</span>`;
+      li.onclick = () => show(item.id);
+      menu.appendChild(li);
+    });
+  }
+
+  // ── Navigation
+  function show(section) {
+    document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+    document.getElementById(section).classList.remove('hidden');
+
+    document.querySelectorAll('#sidebar-menu li').forEach(li => li.classList.remove('active'));
+    const active = Array.from(document.querySelectorAll('#sidebar-menu li')).find(li => 
+      li.textContent.includes(document.getElementById(section).querySelector('h1')?.textContent || '')
+    );
+    if (active) active.classList.add('active');
+
+    if (window.innerWidth < 1025) document.getElementById('sidebar').classList.remove('open');
+
+    refreshCurrentView();
+  }
+
+  function refreshCurrentView() {
+    const activeSection = document.querySelector('section:not(.hidden)')?.id;
+    if (!activeSection) return;
+
+    if (activeSection === 'dashboard') populateDashboard();
+    else if (activeSection === 'status-log') populateLogTable();
+    else if (activeSection === 'summary') populateSummaryTable();
+    else if (activeSection === 'manage-equipment') populateEquipmentTable();
+    else if (activeSection === 'maintenance-schedule') populateMaintTable();
+    else if (activeSection === 'calendar') initCalendar();
+    else if (activeSection === 'operations-report') populateOperationsReport();
+    else if (activeSection === 'control-room') populateControlRoom();
+  }
+
+  // ── Real-time listeners
+  function startRealtimeListeners() {
+    onSnapshot(collection(db, "equipment"), snap => {
+      equipment = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      fillDatalist();
+      refreshCurrentView();
+    });
+
+    onSnapshot(query(collection(db, "status_updates"), orderBy("date","desc"), orderBy("time","desc")), snap => {
+      updates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      refreshCurrentView();
+    });
+
+    onSnapshot(collection(db, "maintenance"), snap => {
+      maintenance = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      refreshCurrentView();
+    });
+
+    onSnapshot(collection(db, "delays"), snap => {
+      delaysData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      refreshCurrentView();
+    });
+  }
+
+  // ── Utility & Data Filtering (respects userShaft + developer override)
+  function fillDatalist() {
+    const dl = document.getElementById('loco-list');
+    dl.innerHTML = equipment.map(e => `<option value="${e.id}"></option>`).join('');
+
+    const job = document.getElementById('job-loco');
+    job.innerHTML = '<option value="">Select Equipment</option>' + equipment.map(e => `<option value="${e.id}">${e.id}</option>`).join('');
+
+    const shafts = [
+      '0 Shaft','1 Shaft','2 Shaft','3 Shaft','4 Shaft','5 Shaft','6 Shaft','7 Shaft','7A Shaft','8 Shaft','9 Shaft','10 Shaft','10D',
+      '11 Shaft','11C Shaft','11D','12 Shaft','12 North Shaft','12S','14 Shaft','14D','16 Shaft','17 Shaft','20 Shaft',
+      'CLAPHAM','DRIKOP','E&F Shaft','NORTH SHAFT','SOUTH SHAFT','STYLDRIFT','Winnaarshoek','Forest Hill',
+      'Offset Underground','UG2 Main Decline','Merensky Main Decline','UG2 North Decline',
+      '367-KT (Kalkfontein)','368-KT (Buffelshoek)','370-KT (Richmond)','372-KT (Dwarsrivier)',
+      '373-KT (De Grooteboom)','374-KT (Tweefontein)','Leeuwkop Shaft'
+    ];
+
+    // Populate all shaft selects
+    const shaftSelects = ['shaft', 'shaft-filter', 'cr-shaft-filter', 'import-shaft'];
+    shaftSelects.forEach(id => {
+      const sel = document.getElementById(id);
+      if (sel) {
+        sel.innerHTML = id === 'shaft-filter' || id === 'cr-shaft-filter' 
+          ? '<option value="">All Shafts</option>' 
+          : '<option value="">Select Shaft</option>';
+        shafts.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          sel.appendChild(opt);
+        });
+      }
+    });
+
+    // Force user shaft for non-developer
+    if (userShaft && !isDeveloper) {
+      document.getElementById('shaft-filter').value = userShaft;
+      document.getElementById('shaft-filter').disabled = true;
+      document.getElementById('shaft-name-display').textContent = `— ${userShaft}`;
+    } else {
+      document.getElementById('shaft-name-display').textContent = userShaft ? `— ${userShaft}` : 'All visible shafts';
+    }
+  }
+
+  function getFilteredEquipment() {
+    let filtered = equipment;
+    if (userShaft && !isDeveloper) {
+      filtered = equipment.filter(e => (e.shaft || '') === userShaft);
+    } else if (currentShaftFilter) {
+      filtered = equipment.filter(e => (e.shaft || '') === currentShaftFilter);
+    }
+    return filtered;
+  }
+
+  function getFilteredUpdates() {
+    const ids = getFilteredEquipment().map(e => e.id);
+    return updates.filter(u => ids.includes(u.equipmentId));
+  }
+
+  function getFilteredMaintenance() {
+    const ids = getFilteredEquipment().map(e => e.id);
+    return maintenance.filter(m => ids.includes(m.equipment));
+  }
+
+  function getFilteredDelays() {
+    const ids = getFilteredEquipment().map(e => e.id);
+    return delaysData.filter(d => ids.includes(d.equipment));
+  }
+
+  function getEquipmentStatus(id) {
+    const eu = updates.filter(u => u.equipmentId === id).sort((a,b) => new Date(b.date+' '+b.time) - new Date(a.date+' '+a.time));
+    if (!eu.length) return {status:'Up', downtime:0, availability:'100.0', lastUpdate:'-', color:'green'};
+
+    const last = eu[0];
+    if (last.status === 'Fixed') return {status:'Up', downtime:0, availability:'100.0', lastUpdate:`${last.date} ${last.time}`, color:'green'};
+
+    const totalDowntimeH = eu.reduce((s,u) => s + (parseFloat(u.downtimeHours)||0), 0);
+    const datesForCalc = [...new Set(eu.map(u=>u.date))].sort();
+    const minD = datesForCalc[0] || new Date().toISOString().slice(0,10);
+    const maxD = datesForCalc[datesForCalc.length-1] || new Date().toISOString().slice(0,10);
+    const totalDays = Math.ceil((new Date(maxD) - new Date(minD)) / 86400000) + 1;
+    const avail = totalDays > 0 ? Math.max(0, Math.min(100, (totalDays - totalDowntimeH/24) / totalDays * 100)) : 100;
+
+    return {
+      status: 'Down',
+      downtime: totalDowntimeH,
+      availability: avail.toFixed(1),
+      lastUpdate: `${last.date} ${last.time}`,
+      color: totalDowntimeH > 168 ? 'red' : 'orange'
+    };
+  }
+
+  function calculateNextDue(last, interval) {
+    if (!last) return null;
+    const d = new Date(last);
+    if (interval==='weekly') d.setDate(d.getDate()+7);
+    else if (interval==='monthly') d.setMonth(d.getMonth()+1);
+    else if (interval==='quarterly') d.setMonth(d.getMonth()+3);
+    return d.toISOString().slice(0,10);
+  }
+
+  function calculateDaysLeft(last, interval) {
+    const due = calculateNextDue(last, interval);
+    if (!due) return NaN;
+    return Math.ceil((new Date(due) - new Date()) / 86400000);
+  }
+
+  // ── Dashboard
+  function populateDashboard() {
+    const filteredEq = getFilteredEquipment();
+    const locoIds = filteredEq.map(e => e.id);
+    const filteredUp = getFilteredUpdates();
+    const filteredMt = getFilteredMaintenance();
+
+    let operational = 0, downLt7d = 0, downGt7d = 0, totalAvail = 0;
+    locoIds.forEach(id => {
+      const st = getEquipmentStatus(id);
+      if (st.status === 'Up') operational++;
+      else if (st.downtime < 168) downLt7d++;
+      else downGt7d++;
+      totalAvail += parseFloat(st.availability);
+    });
+    const avgAvail = locoIds.length ? (totalAvail / locoIds.length).toFixed(1) : '0.0';
+
+    document.getElementById('kpi-grid').innerHTML = `
+      <div class="kpi-card green"><i class="fas fa-play-circle"></i><h2>${operational}</h2><p>Operational</p></div>
+      <div class="kpi-card orange"><i class="fas fa-clock"></i><h2>${downLt7d}</h2><p>Down &lt;7d</p></div>
+      <div class="kpi-card red"><i class="fas fa-exclamation-circle"></i><h2>${downGt7d}</h2><p>Down &gt;7d</p></div>
+      <div class="kpi-card blue"><i class="fas fa-percent"></i><h2>${avgAvail}</h2><p>Availability %</p></div>
+    `;
+
+    const availData = locoIds.map(id => parseFloat(getEquipmentStatus(id).availability));
+    const failureData = locoIds.map(id => filteredUp.filter(u=>u.equipmentId===id && u.isFailure==='1').length);
+
+    const mttfData = locoIds.map(id => {
+      const eu = filteredUp.filter(u => u.equipmentId === id);
+      const fails = eu.filter(u => u.isFailure === '1').length;
+      if (fails === 0) return 0;
+      const uniqueDates = [...new Set(eu.map(u => u.date))];
+      if (uniqueDates.length === 0) return 0;
+      const sortedDates = uniqueDates.sort();
+      const minD = new Date(sortedDates[0]);
+      const maxD = new Date(sortedDates[sortedDates.length - 1]);
+      const totalDays = Math.ceil((maxD - minD) / 86400000) + 1;
+      const downH = eu.reduce((s, u) => s + (parseFloat(u.downtimeHours) || 0), 0);
+      const opDays = Math.max(0, totalDays - downH / 24);
+      return parseFloat((opDays / fails).toFixed(1));
+    });
+
+    if (charts.avail) charts.avail.destroy();
+    charts.avail = new Chart(document.getElementById('availabilityChart'), {
+      type:'bar', data:{ labels:locoIds, datasets:[{data:availData, backgroundColor:'#1d4ed8'}] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}} }
+    });
+
+    if (charts.failures) charts.failures.destroy();
+    charts.failures = new Chart(document.getElementById('failuresChart'), {
+      type:'bar', data:{ labels:locoIds, datasets:[{data:failureData, backgroundColor:'#dc2626'}] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    });
+
+    if (charts.mttf) charts.mttf.destroy();
+    charts.mttf = new Chart(document.getElementById('mttfChart'), {
+      type:'bar', data:{ labels:locoIds, datasets:[{data:mttfData, backgroundColor:'#ea580c'}] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+    });
+
+    const reasons = getFilteredDelays().reduce((acc,d)=>{acc[d.reason]=(acc[d.reason]||0)+d.hours;return acc;},{});
+    if (charts.delay) charts.delay.destroy();
+    charts.delay = new Chart(document.getElementById('delayChart'), {
+      type:'pie', data:{ labels:Object.keys(reasons), datasets:[{data:Object.values(reasons), backgroundColor:['#1d4ed8','#16a34a','#ea580c','#dc2626','#8b5cf6']}] },
+      options:{ responsive:true, maintainAspectRatio:false }
+    });
+
+    const highRisk = locoIds.filter(id => getEquipmentStatus(id).downtime > 168).map(id => {
+      const st = getEquipmentStatus(id);
+      const lastDown = filteredUp.filter(u=>u.equipmentId===id && u.status==='Down').sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time))[0];
+      return `${id} — ${lastDown?.reason || 'Unknown'} (${st.downtime.toFixed(1)} hrs)`;
+    });
+    document.getElementById('high-risk-list').innerHTML = highRisk.map(s=>`<li>${s}</li>`).join('');
+    document.getElementById('high-risk-alerts').classList.toggle('hidden', highRisk.length===0);
+
+    const predictive = filteredMt.map(m => ({...m, days:calculateDaysLeft(m.lastDone, m.interval)})).filter(m => !isNaN(m.days) && m.days <= 7);
+    document.getElementById('predictive-list').innerHTML = predictive.map(p => `<li>${p.equipment} — ${p.task} (${p.days >= 0 ? 'due in '+p.days+' days' : Math.abs(p.days)+' days overdue'})</li>`).join('');
+    document.getElementById('predictive-alerts').classList.toggle('hidden', predictive.length===0);
+
+    document.getElementById('maintenance-list').innerHTML = filteredMt.map(m => {
+      const days = calculateDaysLeft(m.lastDone, m.interval);
+      const color = days<0 ? 'red' : (days<=7 ? 'orange' : 'green');
+      const text = days>=0 ? `${days} days left` : `${Math.abs(days)} days overdue`;
+      return `<div style="color:var(--${color});font-weight:500;">${m.equipment} — ${m.task} — ${text}</div>`;
+    }).join('');
+  }
+
+  function filterDashboard() {
+    currentShaftFilter = document.getElementById('shaft-filter').value;
+    refreshCurrentView();
+  }
+
+  // ── Other view functions (same as original but with permission guards)
+  function populateOperationsReport() {
+    const allIds = equipment.map(e => e.id);
+    const statusSummary = {Up:0, Down:0};
+    const problemRows = [];
+    const highRiskRows = [];
+
+    allIds.forEach(id => {
+      const st = getEquipmentStatus(id);
+      statusSummary[st.status] = (statusSummary[st.status]||0) + 1;
+
+      if (st.status === 'Down') {
+        const eu = updates.filter(u => u.equipmentId === id).sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time));
+        const lastDown = eu.find(u => u.status === 'Down');
+        const color = st.downtime>168?'RED':'ORANGE';
+        problemRows.push([id, 'Down', color, lastDown?.reason||'-', st.downtime.toFixed(1)]);
       }
 
-      userCredential = await auth.createUserWithEmailAndPassword(email, pass);
+      const fails = updates.filter(u => u.equipmentId===id && u.isFailure==='1').length;
+      if (fails >= 3 || parseFloat(st.availability) < 92) {
+        let mttfVal = 'N/A';
+        const eu = updates.filter(u => u.equipmentId === id);
+        if (fails > 0) {
+          const uniqueDates = [...new Set(eu.map(u => u.date))];
+          if (uniqueDates.length > 0) {
+            const sortedDates = uniqueDates.sort();
+            const minD = new Date(sortedDates[0]);
+            const maxD = new Date(sortedDates[sortedDates.length - 1]);
+            const totalDays = Math.ceil((maxD - minD) / 86400000) + 1;
+            const downH = eu.reduce((s, u) => s + (parseFloat(u.downtimeHours) || 0), 0);
+            const opDays = Math.max(0, totalDays - downH / 24);
+            mttfVal = (opDays / fails).toFixed(1);
+          }
+        }
+        highRiskRows.push([id, fails, mttfVal, st.availability]);
+      }
+    });
 
-      await db.collection("user_profiles").doc(userCredential.user.uid).set({
-        name,
-        email,
-        role,
-        shaft,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+    const total = allIds.length;
+    const opBody = [
+      ['Up (Green)', statusSummary.Up, total ? ((statusSummary.Up/total)*100).toFixed(2)+'%' : '0.00%'],
+      ['Down', statusSummary.Down, total ? ((statusSummary.Down/total)*100).toFixed(2)+'%' : '0.00%'],
+      ['Total', total, '100.00%']
+    ];
+
+    document.getElementById('op-status-tbody').innerHTML = opBody.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+    document.getElementById('problem-equipment-tbody').innerHTML = problemRows.length ? problemRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:20px;">No problem equipment</td></tr>';
+    document.getElementById('high-risk-tbody').innerHTML = highRiskRows.length ? highRiskRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}%</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:20px;">No high-risk equipment</td></tr>';
+  }
+
+  function searchStatus(loco, date, all) {
+    let results = updates.filter(u => u.equipmentId === loco);
+    if (date && !all) results = results.filter(u => u.date === date);
+    const html = results.length ?
+      `<table style="width:100%"><thead><tr><th>Date</th><th>Time</th><th>Status</th><th>Shift</th><th>Reason/Fault</th><th>Downtime Hours</th><th>Is Failure?</th></tr></thead><tbody>` +
+      results.map(u => `<tr><td>${u.date}</td><td>${u.time}</td><td>${u.status}</td><td>${u.shift}</td><td>${u.reason}</td><td>${u.downtimeHours||0}</td><td>${u.isFailure==='1'?'Yes':'No'}</td></tr>`).join('') +
+      `</tbody></table>` : 'No results found.';
+    document.getElementById('search-results').innerHTML = html;
+  }
+
+  function populateLogTable() {
+    const tbody = document.querySelector('#log-table tbody');
+    const filtered = getFilteredUpdates();
+    tbody.innerHTML = filtered.sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time))
+      .map(u => `<tr><td>${u.date}</td><td>${u.time}</td><td>${u.equipmentId}</td><td>${u.status}</td><td>${u.shift}</td><td>${u.reason||''}</td><td>${u.downtimeHours||0}</td><td>${u.isFailure==='1'?'Yes':'No'}</td></tr>`).join('');
+  }
+
+  function removeEquipment(locoNumber) {
+    if (!isAdmin && !isDeveloper) return alert("No permission");
+    if (!confirm(`Remove ${locoNumber} and ALL related data?`)) return;
+    (async () => {
+      try {
+        await deleteDoc(doc(db, "equipment", locoNumber));
+        const uq = query(collection(db, "status_updates"), where("equipmentId", "==", locoNumber));
+        const usnap = await getDocs(uq);
+        for (let ds of usnap.docs) await deleteDoc(ds.ref);
+        const mq = query(collection(db, "maintenance"), where("equipment", "==", locoNumber));
+        const msnap = await getDocs(mq);
+        for (let ds of msnap.docs) await deleteDoc(ds.ref);
+        const dq = query(collection(db, "delays"), where("equipment", "==", locoNumber));
+        const dsnap = await getDocs(dq);
+        for (let ds of dsnap.docs) await deleteDoc(ds.ref);
+        alert('Equipment and related data removed');
+        refreshCurrentView();
+      } catch (err) { alert('Error: ' + err.message); }
+    })();
+  }
+
+  function populateSummaryTable() {
+    const filteredEq = getFilteredEquipment();
+    const filteredUp = getFilteredUpdates();
+    const dates = filteredUp.map(u=>u.date);
+    const minD = dates.length ? dates.reduce((a,c)=>c<a?c:a) : new Date().toISOString().slice(0,10);
+    const maxD = dates.length ? dates.reduce((a,c)=>c>a?c:a) : new Date().toISOString().slice(0,10);
+    const totalDays = Math.ceil((new Date(maxD)-new Date(minD))/86400000)+1;
+
+    const tbody = document.querySelector('#summary-table tbody');
+    tbody.innerHTML = filteredEq.map(e => {
+      const id = e.id;
+      const eu = filteredUp.filter(u=>u.equipmentId===id);
+      const downH = eu.reduce((s,u)=>s+(parseFloat(u.downtimeHours)||0),0);
+      const downD = downH/24;
+      const opD = totalDays - downD;
+      const failures = eu.filter(u=>u.isFailure==='1').length;
+      const mttf = failures>0 ? (opD/failures).toFixed(1) : 'N/A';
+      const avail = totalDays>0 ? (opD/totalDays*100).toFixed(1) : 0;
+      const last = eu.sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time))[0];
+      const status = getEquipmentStatus(id).status;
+
+      return `<tr><td>${id}</td><td>${eu.length}</td><td>${totalDays}</td><td>${downD.toFixed(1)}</td><td>${opD.toFixed(1)}</td><td>${failures}</td><td>${mttf}</td><td>${avail}%</td><td>${last?last.date+' '+last.time:'-'}</td><td>${status}</td><td><button class="btn btn-danger" onclick="removeEquipment('${id}')">Remove</button></td></tr>`;
+    }).join('');
+  }
+
+  function populateEquipmentTable() {
+    document.querySelector('#equipment-table tbody').innerHTML = getFilteredEquipment().map(e => `<tr><td>${e.shaft||'-'}</td><td>${e.level||'-'}</td><td>${e.locoSize||'-'}</td><td>${e.id}</td><td>${e.section||'-'}</td></tr>`).join('');
+  }
+
+  function populateMaintTable() {
+    const tbody = document.querySelector('#maint-table tbody');
+    tbody.innerHTML = maintenance.map(m => {
+      const days = calculateDaysLeft(m.lastDone, m.interval);
+      const disp = isNaN(days) ? '-' : (days>=0 ? days : Math.abs(days)+' overdue');
+      return `<tr><td>${m.equipment}</td><td>${m.task}</td><td>${m.interval}</td><td>${m.lastDone}</td><td>${calculateNextDue(m.lastDone,m.interval)||'-'}</td><td>${disp}</td><td><button onclick="editMaint('${m.id}')" class="btn btn-primary">Edit</button><button onclick="deleteMaint('${m.id}')" class="btn btn-danger">Delete</button></td></tr>`;
+    }).join('');
+  }
+
+  function getMaintenanceEvents() {
+    return maintenance.map(task => {
+      if (!task.lastDone) return null;
+      const due = calculateNextDue(task.lastDone, task.interval);
+      const days = calculateDaysLeft(task.lastDone, task.interval);
+      let color = '#16a34a';
+      if (days < 0) color = '#dc2626';
+      else if (days <= 7) color = '#ea580c';
+      return {title: `${task.equipment} - ${task.task}`, start: due, allDay: true, backgroundColor: color, borderColor: color, extendedProps: {daysLeft: days}};
+    }).filter(Boolean);
+  }
+
+  function initCalendar() {
+    const el = document.getElementById('calendar-div');
+    if (calendar) calendar.destroy();
+    const isMobile = window.innerWidth <= 768;
+    calendar = new FullCalendar.Calendar(el, {
+      initialView: isMobile ? 'listWeek' : 'dayGridMonth',
+      headerToolbar: {left:'prev,next today', center:'title', right: isMobile ? 'dayGridMonth,listWeek' : 'dayGridMonth,timeGridWeek,listWeek'},
+      height: 'auto',
+      events: getMaintenanceEvents(),
+      eventContent: arg => ({html: `<div style="padding:4px;">${arg.event.title}<br><small>Days left: ${arg.event.extendedProps.daysLeft}</small></div>`})
+    });
+    calendar.render();
+  }
+
+  function editMaint(id) {
+    if (!isAdmin && !isDeveloper) return alert("No permission");
+    const m = maintenance.find(mm => mm.id === id);
+    if (!m) return;
+    document.getElementById('edit-index').value = id;
+    document.getElementById('edit-equipment').value = m.equipment;
+    document.getElementById('edit-task').value = m.task;
+    document.getElementById('edit-interval').value = m.interval;
+    document.getElementById('edit-last').value = m.lastDone;
+    document.getElementById('edit-modal').classList.add('active');
+  }
+
+  function deleteMaint(id) {
+    if (!isAdmin && !isDeveloper) return alert("No permission");
+    if (confirm('Delete this task?')) {
+      deleteDoc(doc(db, "maintenance", id)).then(() => refreshCurrentView());
+    }
+  }
+
+  // ── Export functions (unchanged)
+  function exportDashboardPDF() {
+    html2canvas(document.getElementById('dashboard'), {scale:2}).then(canvas => {
+      const {jsPDF} = window.jspdf;
+      const doc = new jsPDF('p','mm','a4');
+      const img = canvas.toDataURL('image/png');
+      const w = doc.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      doc.addImage(img, 'PNG', 0, 0, w, h > 280 ? 280 : h);
+      doc.save('RBE_Dashboard.pdf');
+    });
+  }
+
+  function exportSummaryPDF() {
+    html2canvas(document.getElementById('summary'), {scale:2}).then(canvas => {
+      const {jsPDF} = window.jspdf;
+      const doc = new jsPDF('p','mm','a4');
+      const img = canvas.toDataURL('image/png');
+      const w = doc.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      doc.addImage(img, 'PNG', 0, 0, w, h > 280 ? 280 : h);
+      doc.save('Fleet_Summary.pdf');
+    });
+  }
+
+  function exportEquipmentPDF() {
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF();
+    doc.text("Equipment Register", 20, 20);
+    const data = getFilteredEquipment().map(e => [e.shaft, e.level, e.locoSize, e.id, e.section]);
+    doc.autoTable({head:[['Shaft','Level','Loco Size','Loco Number','SECTION']], body:data, startY:35});
+    doc.save('Equipment_Register.pdf');
+  }
+
+  function exportLogCSV() {
+    let csv = "Date,Time,ID,Status,Shift,Fault,Down Hrs,Failure\n";
+    getFilteredUpdates().forEach(u => {
+      csv += `"${u.date}","${u.time}","${u.equipmentId}","${u.status}","${u.shift}","${(u.reason||'').replace(/"/g,'""')}",${u.downtimeHours||0},${u.isFailure}\n`;
+    });
+    const blob = new Blob([csv], {type:'text/csv'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'RBE_Full_Log.csv';
+    link.click();
+  }
+
+  function generateJobPDF() {
+    const jobLoco = document.getElementById('job-loco').value;
+    if (!jobLoco) return alert('Select equipment');
+    const equip = equipment.find(e => e.id === jobLoco) || {};
+    const history = updates.filter(u => u.equipmentId === jobLoco).sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time));
+    const maint = maintenance.filter(m => m.equipment === jobLoco);
+    const st = getEquipmentStatus(jobLoco);
+
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text('JOB ORDER - RBE MAINTENANCE', 105, 20, {align:'center'});
+    doc.setFontSize(14);
+    doc.text(`Equipment: ${jobLoco} | Shaft: ${equip.shaft||'N/A'}`, 20, 35);
+    doc.text(`Status: ${st.status} | Availability: ${st.availability}% | Downtime: ${st.downtime} hrs`, 20, 45);
+
+    let y = 60;
+    doc.setFontSize(13);
+    doc.text('History', 20, y); y += 10;
+    const histData = history.map(u => [u.date, u.time, u.status, u.shift, u.reason||'', u.downtimeHours||0, u.isFailure==='1'?'Yes':'No']);
+    if (histData.length) {
+      doc.autoTable({head:[['Date','Time','Status','Shift','Fault','Down Hrs','Failure']], body:histData, startY:y, styles:{fontSize:8}});
+      y = doc.lastAutoTable.finalY + 15;
     }
 
-    // Success → wait for onAuthStateChanged
-  } catch (err) {
-    msg.textContent = err.message.includes("wrong-password") ? "Incorrect password"
-                      : err.message.includes("user-not-found") ? "Account not found"
-                      : err.message;
+    if (maint.length) {
+      doc.text('Maintenance', 20, y); y += 10;
+      const maintData = maint.map(m => [m.task, m.interval, m.lastDone, calculateNextDue(m.lastDone,m.interval)||'-', calculateDaysLeft(m.lastDone,m.interval)]);
+      doc.autoTable({head:[['Task','Interval','Last Done','Due','Days']], body:maintData, startY:y});
+    }
+
+    doc.save(`Job_Order_${jobLoco}.pdf`);
   }
-};
 
-// ────────────────────────────────────────────────
-//  Main auth listener
-// ────────────────────────────────────────────────
-auth.onAuthStateChanged(async user => {
-  if (user) {
-    document.getElementById('auth-screen').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
+  function exportMaintPDF() {
+    const {jsPDF} = window.jspdf;
+    const doc = new jsPDF();
+    doc.text("Maintenance Schedule", 20, 20);
+    const data = maintenance.map(m => [m.equipment, m.task, m.interval, m.lastDone, calculateNextDue(m.lastDone,m.interval)||'-', calculateDaysLeft(m.lastDone,m.interval)]);
+    doc.autoTable({head:[['Equipment','Task','Interval','Last Done','Due','Days Left']], body:data, startY:35});
+    doc.save('Maintenance_Schedule.pdf');
+  }
 
-    const profile = await db.collection("user_profiles").doc(user.uid).get();
-    if (profile.exists) {
-      currentUserData = profile.data();
-      isAdmin   = currentUserData.role === "admin";
-      userShaft = currentUserData.shaft;
+  function exportOperationsReportPDF() {
+    html2canvas(document.getElementById('operations-report'), {scale:2}).then(canvas => {
+      const {jsPDF} = window.jspdf;
+      const doc = new jsPDF('p','mm','a4');
+      const img = canvas.toDataURL('image/png');
+      const w = doc.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      doc.addImage(img, 'PNG', 0, 0, w, h > 280 ? 280 : h);
+      doc.save('Operations_Report.pdf');
+    });
+  }
 
-      document.getElementById('current-user-info').innerHTML = `
-        ${currentUserData.name || user.email}<br>
-        <small>${isAdmin ? 'Admin' : 'View-only'} • ${userShaft || '?'}</small>
-      `;
+  function populateControlRoom() {
+    const shaftFilter = document.getElementById('cr-shaft-filter')?.value || '';
+    const dateFilterRaw = document.getElementById('cr-date-filter')?.value || '';
 
-      if (!isAdmin) {
-        document.getElementById('readonly-warning').classList.remove('hidden');
+    let filtered = updates.filter(u => u.source === 'Imported Breakdown Report');
+
+    if (shaftFilter) {
+      const shaftEq = equipment.filter(e => e.shaft === shaftFilter);
+      const shaftIds = shaftEq.map(e => e.id);
+      filtered = filtered.filter(u => (u.shaft && u.shaft === shaftFilter) || shaftIds.includes(u.equipmentId));
+    }
+
+    if (dateFilterRaw) {
+      filtered = filtered.filter(u => (u.date || '').trim() === dateFilterRaw.trim());
+    }
+
+    const tbody = document.querySelector('#control-room-table tbody');
+    tbody.innerHTML = filtered
+      .sort((a,b) => {
+        const da = new Date(a.date + ' ' + (a.time || '00:00'));
+        const db = new Date(b.date + ' ' + (b.time || '00:00'));
+        return db - da;
+      })
+      .map(u => `<tr>
+        <td>${u.date || '-'}</td>
+        <td>${u.time || '-'}</td>
+        <td>${u.equipmentId || '-'}</td>
+        <td>${u.status || '-'}</td>
+        <td>${u.shift || '-'}</td>
+        <td>${u.reason||''}</td>
+        <td>${u.downtimeHours||0}</td>
+        <td>${u.isFailure==='1'?'Yes':'No'}</td>
+      </tr>`).join('');
+  }
+
+  function filterControlRoomReport() {
+    populateControlRoom();
+  }
+
+  function exportControlRoomCSV() {
+    let csv = "Date,Time,ID,Status,Shift,Fault,Down Hrs,Failure\n";
+    const filtered = updates.filter(u => u.source === 'Imported Breakdown Report')
+      .sort((a,b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time));
+    filtered.forEach(u => {
+      csv += `"${u.date || ''}","${u.time || ''}","${u.equipmentId || ''}","${u.status || ''}","${u.shift || ''}","${(u.reason||'').replace(/"/g,'""')}","${u.downtimeHours||0}","${u.isFailure||'0'}"\n`;
+    });
+    const blob = new Blob([csv], {type:'text/csv'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'Control_Room_Report.csv';
+    link.click();
+  }
+
+  // ── Import Excel (only admin/developer)
+  function handleFileUpload() {
+    if (!isAdmin && !isDeveloper) return alert("No permission to import");
+    const file = document.getElementById('excel-file').files[0];
+    if (!file) return alert('Select Excel file');
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, {type:'array'});
+      let sheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('breakdown')) || workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonRows = XLSX.utils.sheet_to_json(worksheet, {header:1, defval:''});
+
+      let headerIndex = jsonRows.findIndex(row => row.some(cell => typeof cell==='string' && cell.toLowerCase().includes('operator'))) || 3;
+      const rawHeader = jsonRows[headerIndex];
+      columnHeaders = rawHeader.map(h => (h||'').toString().trim()).filter(Boolean);
+      excelData = [];
+      for (let i = headerIndex + 1; i < jsonRows.length; i++) {
+        const row = jsonRows[i];
+        if (!row || row.every(c => c==='')) continue;
+        let obj = {};
+        rawHeader.forEach((key,j) => { if (key) obj[(key||'').toString().trim()] = row[j]!==undefined ? row[j] : ''; });
+        excelData.push(obj);
+      }
+      if (!excelData.length) return alert('No data found');
+      buildMappingForm();
+      document.getElementById('mapping-section').classList.remove('hidden');
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function buildMappingForm() {
+    const container = document.getElementById('mapping-form');
+    container.innerHTML = '';
+    const maps = [
+      {id:'map-date', label:'Date', def:'Date'},
+      {id:'map-shift', label:'Shift', def:'Shift'},
+      {id:'map-equipment', label:'Equipment ID', def:'Working Place'},
+      {id:'map-reason', label:'Reason/Fault', def:'Breakdown / Failure'},
+      {id:'map-downtime', label:'Downtime Hours', def:'Total Downtime'},
+      {id:'map-time', label:'Time', def:'Time on'}
+    ];
+    maps.forEach(m => {
+      let html = `<div class="form-group"><label>${m.label}</label><select id="${m.id}">`;
+      columnHeaders.forEach(col => html += `<option value="${col}" ${col===m.def?'selected':''}>${col}</option>`);
+      html += '</select></div>';
+      container.innerHTML += html;
+    });
+  }
+
+  function previewImport() {
+    selectedMapping = {
+      date: document.getElementById('map-date').value,
+      shift: document.getElementById('map-shift').value,
+      equipment: document.getElementById('map-equipment').value,
+      reason: document.getElementById('map-reason').value,
+      downtime: document.getElementById('map-downtime').value,
+      time: document.getElementById('map-time').value
+    };
+
+    let html = `<table><thead><tr><th><input type="checkbox" onclick="toggleAllRows(this)" checked></th><th>Date</th><th>Shift</th><th>Equipment ID</th><th>Reason/Fault</th><th>Downtime (hrs)</th><th>Status</th></tr></thead><tbody>`;
+    excelData.forEach((row, idx) => {
+      let dateVal = row[selectedMapping.date] || '';
+      let shiftVal = row[selectedMapping.shift] || 'Night';
+      let equipVal = (row[selectedMapping.equipment]||'Unknown').toString().trim();
+      let reasonVal = (row[selectedMapping.reason]||'Imported Breakdown').toString().trim();
+      let dtRaw = row[selectedMapping.downtime]||0;
+      let downtimeHrs = (typeof dtRaw==='number' ? dtRaw : parseFloat(dtRaw)||0);
+      if (downtimeHrs < 50) downtimeHrs *= 24;
+      const action = row['Action Taken/Feedback'] || '';
+      const statusVal = (action && action.toString().trim() !== '') ? 'Fixed' : 'Down';
+
+      html += `<tr><td><input type="checkbox" class="row-select" data-index="${idx}" checked></td><td>${dateVal}</td><td>${shiftVal}</td><td>${equipVal}</td><td>${reasonVal}</td><td>${downtimeHrs.toFixed(1)}</td><td>${statusVal}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+    document.getElementById('preview-table').innerHTML = html;
+    document.getElementById('preview-section').classList.remove('hidden');
+  }
+
+  function toggleAllRows(cb) {
+    document.querySelectorAll('.row-select').forEach(chk => chk.checked = cb.checked);
+  }
+
+  async function importSelectedRows() {
+    if (!isAdmin && !isDeveloper) return alert("No permission");
+    const checked = document.querySelectorAll('.row-select:checked');
+    if (!checked.length) return alert('No rows selected');
+    const selectedShaft = document.getElementById('import-shaft').value;
+    let count = 0;
+    for (let chk of checked) {
+      const idx = parseInt(chk.dataset.index);
+      const row = excelData[idx];
+
+      let date = row[selectedMapping.date] || new Date().toISOString().slice(0,10);
+      if (typeof date === 'number') {
+        const excelDate = new Date((date - 25569) * 86400 * 1000);
+        date = excelDate.toISOString().slice(0,10);
       }
 
-      buildMenu();
-      loadEquipment();
-      showSection('view-dashboard');
+      const shift = row[selectedMapping.shift] || 'Night';
+      const equipment = (row[selectedMapping.equipment]||'Imported').toString().trim();
+      const reason = (row[selectedMapping.reason]||'Imported Breakdown').toString().trim();
+      let dtRaw = row[selectedMapping.downtime]||0;
+      let downtimeHrs = (typeof dtRaw==='number' ? dtRaw : parseFloat(dtRaw)||0);
+      if (downtimeHrs < 50) downtimeHrs *= 24;
+      const timeStr = row[selectedMapping.time] || '00:00';
+      const status = (row['Action Taken/Feedback'] && row['Action Taken/Feedback'].toString().trim() !== '') ? 'Fixed' : 'Down';
+
+      const importedUpdate = {
+        equipmentId: equipment,
+        date: date,
+        time: timeStr,
+        status: status,
+        shift: shift,
+        reason: reason,
+        downtimeHours: parseFloat(downtimeHrs.toFixed(2)),
+        isFailure: '1',
+        source: 'Imported Breakdown Report',
+        shaft: selectedShaft || '',
+        createdAt: serverTimestamp()
+      };
+      await addDoc(collection(db, "status_updates"), importedUpdate);
+
+      if (selectedShaft && !equipment.some(e => e.id === equipment)) {
+        await setDoc(doc(db, "equipment", equipment), {
+          shaft: selectedShaft,
+          level: 'Imported',
+          locoSize: 'N/A',
+          section: 'Imported'
+        }, { merge: true });
+      }
+      count++;
+    }
+
+    alert(`Imported ${count} record(s)!`);
+    refreshCurrentView();
+    document.getElementById('preview-section').classList.add('hidden');
+    document.getElementById('mapping-section').classList.add('hidden');
+  }
+
+  // ── Form listeners with permission checks
+  document.getElementById('add-eq-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!isAdmin && !isDeveloper) return alert("No permission");
+    const id = document.getElementById('loco-number').value.trim();
+    if (!id) return alert('Equipment ID required');
+
+    const data = {
+      shaft: document.getElementById('shaft').value,
+      level: document.getElementById('level').value,
+      locoSize: document.getElementById('loco-size').value,
+      section: document.getElementById('section').value
+    };
+
+    try {
+      await setDoc(doc(db, "equipment", id), data, { merge: true });
+      alert('Equipment saved');
+      e.target.reset();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  });
+
+  document.getElementById('add-status-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!isAdmin && !isDeveloper) return alert("No permission");
+    const data = {
+      equipmentId: document.getElementById('u-loco').value.trim(),
+      date: document.getElementById('u-date').value,
+      time: document.getElementById('u-time').value,
+      status: document.getElementById('u-status').value,
+      shift: document.getElementById('u-shift').value,
+      reason: document.getElementById('u-reason').value.trim(),
+      downtimeHours: Number(document.getElementById('u-downtime').value) || 0,
+      isFailure: document.getElementById('u-failure').value,
+      source: '',
+      createdAt: serverTimestamp()
+    };
+
+    if (!data.equipmentId || !data.date || !data.reason) return alert('Required fields missing');
+
+    try {
+      await addDoc(collection(db, "status_updates"), data);
+      alert('Update saved');
+      e.target.reset();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  });
+
+  document.getElementById('edit-maint-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!isAdmin && !isDeveloper) return alert("No permission");
+    const id = document.getElementById('edit-index').value;
+    const data = {
+      equipment: document.getElementById('edit-equipment').value,
+      task: document.getElementById('edit-task').value,
+      interval: document.getElementById('edit-interval').value,
+      lastDone: document.getElementById('edit-last').value
+    };
+    try {
+      await updateDoc(doc(db, "maintenance", id), data);
+      document.getElementById('edit-modal').classList.remove('active');
+      refreshCurrentView();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  });
+
+  document.getElementById('add-maint-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!isAdmin && !isDeveloper) return alert("No permission");
+    const f = e.target;
+    const data = {
+      equipment: f[0].value,
+      task: f[1].value,
+      interval: f[2].value,
+      lastDone: f[3].value
+    };
+    try {
+      await addDoc(collection(db, "maintenance"), data);
+      alert('Maintenance task added');
+      document.getElementById('add-maint-modal').classList.remove('active');
+      e.target.reset();
+    } catch (err) {
+      alert('Error: ' + err.message);
+    }
+  });
+
+  document.getElementById('search-form').addEventListener('submit', e => {
+    e.preventDefault();
+    searchStatus(
+      document.getElementById('s-loco').value,
+      document.getElementById('s-date').value,
+      document.getElementById('show-all-history').checked
+    );
+  });
+
+  // ── Theme toggle
+  function toggleTheme() {
+    const html = document.documentElement;
+    if (html.getAttribute('data-theme') === 'dark') {
+      html.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+      document.getElementById('theme-toggle').innerHTML = '☀️';
     } else {
-      alert("User profile not found. Contact administrator.");
-      auth.signOut();
+      html.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+      document.getElementById('theme-toggle').innerHTML = '🌙';
     }
-  } else {
-    document.getElementById('auth-screen').classList.remove('hidden');
-    document.getElementById('app').classList.add('hidden');
   }
-});
 
-// ────────────────────────────────────────────────
-//  Menu & Navigation
-// ────────────────────────────────────────────────
-function buildMenu() {
-  const menu = document.getElementById('sidebar-menu');
-  menu.innerHTML = '';
-
-  const items = isAdmin ? [
-    {id:'view-dashboard',       icon:'tachometer-alt', label:'Dashboard'},
-    {id:'view-add-equipment',   icon:'plus-circle',     label:'+ New Equipment'},
-    {id:'view-log-status',      icon:'edit',            label:'Log Status'},
-    {id:'view-status-log',      icon:'list',            label:'Status Log'},
-    {id:'view-summary',         icon:'chart-bar',       label:'Fleet Summary'},
-  ] : [
-    {id:'view-dashboard',       icon:'tachometer-alt', label:'Dashboard'},
-    {id:'view-status-log',      icon:'list',           label:'Status Log'},
-    {id:'view-summary',         icon:'chart-bar',      label:'Fleet Summary'},
-  ];
-
-  items.forEach(item => {
-    const li = document.createElement('li');
-    li.innerHTML = `<i class="fas fa-${item.icon}"></i> ${item.label}`;
-    li.onclick = () => showSection(item.id);
-    menu.appendChild(li);
-  });
-}
-
-function showSection(id) {
-  document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
-  document.getElementById(id).classList.remove('hidden');
-
-  document.querySelectorAll('.sidebar-menu li').forEach(li => li.classList.remove('active'));
-  const activeLi = Array.from(document.querySelectorAll('.sidebar-menu li'))
-    .find(li => li.textContent.includes(document.getElementById(id).querySelector('h1')?.textContent || ''));
-  if (activeLi) activeLi.classList.add('active');
-
-  if (id === 'view-dashboard')       renderDashboard();
-  if (id === 'view-status-log')      renderLogTable();
-  if (id === 'view-summary')         renderSummaryTable();
-}
-
-// ────────────────────────────────────────────────
-//  Data loading
-// ────────────────────────────────────────────────
-async function loadEquipment() {
-  const query = isAdmin && userShaft
-    ? db.collection("equipment").where("shaft", "==", userShaft)
-    : db.collection("equipment");
-
-  query.onSnapshot(snap => {
-    equipmentList = [];
-    snap.forEach(doc => {
-      equipmentList.push({ id: doc.id, ...doc.data() });
-    });
-    updateDatalist();
-    renderDashboard();
-    renderSummaryTable();
-  });
-}
-
-function updateDatalist() {
-  const dl = document.getElementById('eq-list');
-  dl.innerHTML = '';
-  equipmentList.forEach(eq => {
-    const opt = document.createElement('option');
-    opt.value = eq.id;
-    dl.appendChild(opt);
-  });
-}
-
-// ────────────────────────────────────────────────
-//  Dashboard
-// ────────────────────────────────────────────────
-function renderDashboard() {
-  const shaftDisplay = document.getElementById('shaft-name-display');
-  shaftDisplay.textContent = userShaft || "All visible shafts";
-
-  const total = equipmentList.length;
-  const down  = equipmentList.filter(e => e.currentStatus === "Down").length;
-
-  document.getElementById('kpi-tiles').innerHTML = `
-    <div class="kpi blue"><h2>${total}</h2><div>Total units</div></div>
-    <div class="kpi green"><h2>${total - down}</h2><div>Operational</div></div>
-    <div class="kpi orange"><h2>${down}</h2><div>Down</div></div>
-  `;
-
-  // Placeholder chart
-  const ctx = document.getElementById('availChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: equipmentList.slice(0,12).map(e => e.id),
-      datasets: [{
-        label: 'Availability %',
-        data: Array(12).fill(0).map(() => 82 + Math.random()*16),
-        backgroundColor: 'rgba(29, 78, 216, 0.6)',
-        borderColor: 'rgba(29, 78, 216, 1)',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: { y: { beginAtZero: true, max: 100 } }
-    }
-  });
-}
-
-// ────────────────────────────────────────────────
-//  Log table
-// ────────────────────────────────────────────────
-function renderLogTable() {
-  const tbody = document.getElementById('log-tbody');
-  tbody.innerHTML = '';
-
-  // Placeholder – in real app you would listen to status_updates collection
-  for (let i = 0; i < 12; i++) {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>2025-03-${String(10+i).padStart(2,'0')}</td>
-      <td>L${100+Math.floor(Math.random()*200)}</td>
-      <td>${Math.random()>0.7?'Down':'Up'}</td>
-      <td>${['Hydraulic leak','Brake fault','Electrical','Routine check'][Math.floor(Math.random()*4)]}</td>
-    `;
-    tbody.appendChild(row);
+  // ── Initial load
+  if (localStorage.getItem('theme') === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('theme-toggle').innerHTML = '🌙';
   }
-}
 
-// ────────────────────────────────────────────────
-//  Summary table
-// ────────────────────────────────────────────────
-function renderSummaryTable() {
-  const tbody = document.getElementById('summary-tbody');
-  tbody.innerHTML = '';
-
-  equipmentList.forEach(eq => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${eq.id}</td>
-      <td>${eq.shaft || '?'}</td>
-      <td>${eq.level || '-'}</td>
-      <td style="color:${eq.currentStatus==='Down'?'#dc2626':'#16a34a'}">
-        ${eq.currentStatus || 'Up'}
-      </td>
-      <td>${eq.lastUpdate ? new Date(eq.lastUpdate.toDate()).toLocaleDateString() : '-'}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-// ────────────────────────────────────────────────
-//  Add Equipment
-// ────────────────────────────────────────────────
-document.getElementById('form-add-equipment').onsubmit = async e => {
-  e.preventDefault();
-  if (!isAdmin) return alert("No permission to add equipment.");
-
-  const id    = document.getElementById('eq-id').value.trim();
-  const shaft = document.getElementById('eq-shaft').value;
-  const level = document.getElementById('eq-level').value.trim();
-
-  if (!id || !shaft) return alert("Equipment ID and Shaft are required.");
-
-  try {
-    await db.collection("equipment").doc(id).set({
-      shaft,
-      level,
-      currentStatus: "Up",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    alert("Equipment added.");
-    e.target.reset();
-  } catch (err) {
-    alert("Error: " + err.message);
-  }
-};
-
-// ────────────────────────────────────────────────
-//  Log Status (placeholder)
-// ────────────────────────────────────────────────
-document.getElementById('form-log-status').onsubmit = async e => {
-  e.preventDefault();
-  if (!isAdmin) return alert("No permission to log status.");
-
-  alert("Status logged (demo mode – real save not implemented in this version)");
-  e.target.reset();
-};
-
-// Logout
-document.getElementById('logout')?.addEventListener('click', () => auth.signOut());
+  // Start
+  fillDatalist(); // initial shafts
 </script>
 </body>
 </html>
