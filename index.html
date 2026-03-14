@@ -18,6 +18,18 @@
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+  <!-- Firebase v10 Modular SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+    import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+    window.firebaseModules = {
+      initializeApp, getAuth, onAuthStateChanged, signOut,
+      getFirestore, collection, doc, setDoc, addDoc, onSnapshot, serverTimestamp, query, orderBy
+    };
+  </script>
+
   <style>
     :root {
       --bg:        #f8f9fc;
@@ -64,19 +76,19 @@
     #sidebar-menu li { padding:0.9rem 1.15rem; margin:0.3rem 0; border-radius:8px; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:12px; color:#e2e8f0; transition:all 0.2s; }
     #sidebar-menu li i { font-size:1.3rem; width:24px; }
     #sidebar-menu li:hover, #sidebar-menu li.active { background:#334155; color:white; transform:translateX(4px); }
-    .hamburger { position:fixed; top:14px; left:14px; z-index:1101; width:46px; height:46px; background:#1d4ed8; color:white; border:none; border-radius:50%; font-size:1.45rem; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(29,78,216,0.4); cursor:pointer; }
+    .hamburger { position:fixed; top:14px; left:14px; z-index:1101; width:46px; height:46px; background:var(--primary); color:white; border:none; border-radius:50%; font-size:1.45rem; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(29,78,216,0.4); cursor:pointer; }
     .main { flex:1; padding:1rem; overflow-y:auto; background:var(--bg); }
     .container { max-width:1800px; margin:0 auto; }
-    .header-bar { background:linear-gradient(135deg, #1d4ed8, #3b82f6); color:white; padding:1.1rem 1.3rem; border-radius:var(--radius-lg) var(--radius-lg) 0 0; margin:-1rem -1rem 1.25rem; display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; align-items:center; box-shadow:var(--shadow); }
+    .header-bar { background:linear-gradient(135deg, var(--primary), #3b82f6); color:white; padding:1.1rem 1.3rem; border-radius:var(--radius-lg) var(--radius-lg) 0 0; margin:-1rem -1rem 1.25rem; display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; align-items:center; box-shadow:var(--shadow); }
     .header-bar h1 { font-size: clamp(1.35rem, 4.5vw, 1.75rem); font-weight:700; letter-spacing:-0.025em; }
     h2 { font-size: clamp(1.18rem, 3.8vw, 1.35rem); font-weight:700; color:var(--primary); margin-bottom:1rem; }
     .card { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:1.25rem; margin-bottom:1.25rem; border:1px solid var(--border); }
     .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(155px, 1fr)); gap:1rem; margin:1.25rem 0; }
     .kpi-card { background:linear-gradient(145deg, #ffffff, #f8fafc); border-radius:var(--radius-lg); padding:1.35rem 1rem; text-align:center; box-shadow:var(--shadow); border:1px solid var(--border); transition:transform 0.3s; }
     .kpi-card:hover { transform:translateY(-5px); }
-    .kpi-card.green  h2 { color:#16a34a; }
-    .kpi-card.orange h2 { color:#ea580c; }
-    .kpi-card.red    h2 { color:#dc2626; }
+    .kpi-card.green  h2 { color:var(--success); }
+    .kpi-card.orange h2 { color:var(--warning); }
+    .kpi-card.blue   h2 { color:var(--primary); }
     table { width:100%; border-collapse:separate; border-spacing:0; margin:1rem 0; background:var(--surface); }
     th, td { padding:12px 10px; text-align:left; border-bottom:1px solid var(--border); }
     th { background:#0f172a; color:white; font-weight:600; position:sticky; top:0; z-index:2; }
@@ -91,209 +103,156 @@
     .alert-predictive { border-color:var(--warning); background:rgba(234,88,12,0.08); color:#9a3412; }
     .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); align-items:center; justify-content:center; z-index:2000; padding:1rem; }
     .modal.active { display:flex; }
-    .modal-content { background:var(--surface); border-radius:12px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto; padding:1.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.25); }
+    .modal-content { background:var(--surface); border-radius:12px; max-width:540px; width:100%; max-height:90vh; overflow-y:auto; padding:1.5rem; box-shadow:var(--shadow-lg); }
     .form-group { margin-bottom:1.2rem; }
     label { display:block; font-weight:600; margin-bottom:0.45rem; color:var(--text-2); }
     input, select, textarea { width:100%; padding:0.75rem 1rem; border:1px solid var(--border); border-radius:8px; background:var(--surface-2); font-size:0.95rem; }
     input:focus, select:focus, textarea:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(29,78,216,0.15); }
     .hidden { display:none !important; }
-    #auth-section { max-width:420px; margin:4rem auto; padding:2.5rem 2rem; background:var(--surface); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.15); }
     #logout-btn { position:fixed; top:14px; right:14px; z-index:1102; padding:0.6rem 1.2rem; background:var(--danger); color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer; box-shadow:0 4px 14px rgba(220,38,38,0.4); }
-    .live-indicator { position:fixed; bottom:16px; right:16px; background:#16a34a; color:white; padding:0.55rem 1.1rem; border-radius:999px; font-weight:600; font-size:0.86rem; box-shadow:0 4px 16px rgba(22,163,74,0.4); z-index:999; display:flex; align-items:center; gap:6px; }
+    .live-indicator { position:fixed; bottom:16px; right:16px; background:var(--success); color:white; padding:0.55rem 1.1rem; border-radius:999px; font-weight:600; font-size:0.86rem; box-shadow:0 4px 16px rgba(22,163,74,0.4); z-index:999; display:flex; align-items:center; gap:6px; }
   </style>
 </head>
 <body>
 
-<!-- Authentication -->
-<div id="auth-section">
-  <h2 id="auth-title">Sign In</h2>
-  <form id="auth-form">
-    <div class="form-group"><label>Email</label><input id="email" type="email" required autocomplete="email"></div>
-    <div class="form-group"><label>Password</label><input id="password" type="password" required autocomplete="current-password"></div>
-    <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;" id="auth-submit">Sign In</button>
-  </form>
-  <p style="margin-top:1.2rem;text-align:center;">
-    <a href="#" id="toggle-auth" style="color:var(--primary);font-weight:500;">Create an account</a>
-  </p>
-  <p id="auth-error" style="color:var(--danger);text-align:center;min-height:1.3em;"></p>
+<button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+<button id="theme-toggle" onclick="toggleTheme()">☀️</button>
+<button id="logout-btn" onclick="logout()">Logout</button>
+
+<div class="wrapper">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <img class="logo-img" src="https://apventures.com/wp-content/uploads/2023/06/image-35.jpeg" alt="Impala Platinum">
+      <button onclick="document.getElementById('sidebar').classList.remove('open')" style="background:none;border:none;color:white;font-size:2.4rem;cursor:pointer;">×</button>
+    </div>
+    <ul id="sidebar-menu">
+      <li class="active" data-view="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</li>
+      <li data-view="add-equipment"><i class="fas fa-plus-circle"></i> + New Equipment</li>
+      <li data-view="add-status"><i class="fas fa-edit"></i> Log Status Update</li>
+      <li data-view="search-status"><i class="fas fa-search"></i> Search History</li>
+      <li data-view="status-log"><i class="fas fa-list"></i> Full Log</li>
+      <li data-view="summary"><i class="fas fa-chart-bar"></i> Fleet Summary</li>
+      <li data-view="manage-equipment"><i class="fas fa-tools"></i> Equipment Register</li>
+      <li data-view="maintenance-schedule"><i class="fas fa-calendar-check"></i> Maintenance Plan</li>
+    </ul>
+  </aside>
+
+  <main class="main">
+    <div class="container" id="app">
+
+      <!-- Dashboard -->
+      <section id="dashboard" class="view-section">
+        <div class="header-bar">
+          <h1>Real-time RBE Monitoring – Platinum Operations</h1>
+          <select id="shaft-filter"><option value="">All Shafts</option></select>
+        </div>
+        <div id="high-risk-alerts" class="alert-banner alert-high-risk hidden"></div>
+        <div id="predictive-alerts" class="alert-banner alert-predictive hidden"></div>
+        <div class="kpi-grid" id="kpi-grid"></div>
+        <div class="card"><h2>Charts placeholder – add Chart.js here</h2></div>
+      </section>
+
+      <!-- Add Equipment -->
+      <section id="add-equipment" class="view-section hidden">
+        <div class="header-bar"><h1>Add New Equipment</h1></div>
+        <form id="add-equipment-form" style="max-width:600px;margin:2rem auto;">
+          <div class="form-group"><label>Shaft</label><select id="eq-shaft" required></select></div>
+          <div class="form-group"><label>Level / Work Place</label><input id="eq-level" required></div>
+          <div class="form-group"><label>Equipment Size</label><input id="eq-size" required></div>
+          <div class="form-group"><label>Equipment ID (Loco #)</label><input id="eq-id" required></div>
+          <div class="form-group"><label>Section</label><input id="eq-section" required></div>
+          <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1.5rem;">Save Equipment</button>
+        </form>
+      </section>
+
+      <!-- Log Status Update -->
+      <section id="add-status" class="view-section hidden">
+        <div class="header-bar"><h1>Log Status Update</h1></div>
+        <form id="add-status-form" style="max-width:600px;margin:2rem auto;">
+          <div class="form-group"><label>Date</label><input type="date" id="upd-date" required></div>
+          <div class="form-group"><label>Time</label><input type="time" id="upd-time" required></div>
+          <div class="form-group"><label>Equipment ID</label><input list="loco-list" id="upd-equipment" required></div>
+          <div class="form-group"><label>Status</label><select id="upd-status" required><option>Down</option><option>Fixed</option></select></div>
+          <div class="form-group"><label>Shift</label><select id="upd-shift" required><option>Morning</option><option>Afternoon</option><option>Night</option></select></div>
+          <div class="form-group"><label>Reason / Fault</label><textarea id="upd-reason" rows="3" required></textarea></div>
+          <div class="form-group"><label>Downtime Hours</label><input type="number" step="0.1" min="0" id="upd-downtime" value="0"></div>
+          <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1.5rem;">Submit Update</button>
+        </form>
+      </section>
+
+      <!-- Full Log -->
+      <section id="status-log" class="view-section hidden">
+        <div class="header-bar"><h1>Full Status Log</h1></div>
+        <div style="overflow-x:auto;">
+          <table id="full-log-table">
+            <thead><tr><th>Date</th><th>Time</th><th>Equipment</th><th>Status</th><th>Shift</th><th>Reason</th><th>Down Hrs</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Fleet Summary -->
+      <section id="summary" class="view-section hidden">
+        <div class="header-bar"><h1>Fleet Summary</h1></div>
+        <div style="overflow-x:auto;">
+          <table id="summary-table">
+            <thead><tr><th>ID</th><th>Shaft</th><th>Level</th><th>Size</th><th>Section</th><th>Last Status</th><th>Last Update</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Equipment Register -->
+      <section id="manage-equipment" class="view-section hidden">
+        <div class="header-bar"><h1>Equipment Register</h1></div>
+        <div style="overflow-x:auto;">
+          <table id="equipment-table">
+            <thead><tr><th>Shaft</th><th>Level</th><th>Size</th><th>ID</th><th>Section</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Maintenance Schedule -->
+      <section id="maintenance-schedule" class="view-section hidden">
+        <div class="header-bar">
+          <h1>Maintenance Plan</h1>
+          <button class="btn btn-primary" onclick="document.getElementById('maint-modal').classList.add('active')">+ Add Task</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table id="maintenance-table">
+            <thead><tr><th>Equipment</th><th>Task</th><th>Interval</th><th>Last Done</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
 </div>
 
-<!-- Main Application -->
-<div id="app" class="hidden">
+<div class="live-indicator"><i class="fas fa-circle" style="font-size:0.7rem;"></i> LIVE</div>
 
-  <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
-  <button id="theme-toggle" onclick="toggleTheme()">☀️</button>
-  <button id="logout-btn">Logout</button>
+<datalist id="loco-list"></datalist>
 
-  <div class="wrapper">
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <img class="logo-img" src="https://apventures.com/wp-content/uploads/2023/06/image-35.jpeg" alt="Impala Platinum">
-        <button onclick="document.getElementById('sidebar').classList.remove('open')" style="background:none;border:none;color:white;font-size:2.4rem;cursor:pointer;">×</button>
-      </div>
-      <ul id="sidebar-menu">
-        <li class="active" data-view="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</li>
-        <li data-view="add-equipment"><i class="fas fa-plus-circle"></i> + New Equipment</li>
-        <li data-view="add-status"><i class="fas fa-edit"></i> Log Status Update</li>
-        <li data-view="search-status"><i class="fas fa-search"></i> Search History</li>
-        <li data-view="status-log"><i class="fas fa-list"></i> Full Log</li>
-        <li data-view="summary"><i class="fas fa-chart-bar"></i> Fleet Summary</li>
-        <li data-view="manage-equipment"><i class="fas fa-tools"></i> Equipment Register</li>
-        <li data-view="maintenance-schedule"><i class="fas fa-calendar-check"></i> Maintenance Plan</li>
-      </ul>
-    </aside>
-
-    <main class="main">
-      <div class="container">
-
-        <!-- Dashboard -->
-        <section id="dashboard" class="view-section">
-          <div class="header-bar">
-            <h1>Real-time RBE Monitoring – Platinum Operations</h1>
-            <select id="shaft-filter"><option value="">All Shafts</option></select>
-          </div>
-          <div id="high-risk-alerts" class="alert-banner alert-high-risk hidden"></div>
-          <div id="predictive-alerts" class="alert-banner alert-predictive hidden"></div>
-          <div class="kpi-grid" id="kpi-grid"></div>
-          <div class="card"><h2>Charts placeholder – add Chart.js here</h2></div>
-        </section>
-
-        <!-- Add Equipment -->
-        <section id="add-equipment" class="view-section hidden">
-          <div class="header-bar"><h1>Add New Equipment</h1></div>
-          <form id="add-equipment-form" style="max-width:600px;margin:2rem auto;">
-            <div class="form-group"><label>Shaft</label><select id="eq-shaft" required></select></div>
-            <div class="form-group"><label>Level / Work Place</label><input id="eq-level" required></div>
-            <div class="form-group"><label>Equipment Size</label><input id="eq-size" required></div>
-            <div class="form-group"><label>Equipment ID (Loco #)</label><input id="eq-id" required></div>
-            <div class="form-group"><label>Section</label><input id="eq-section" required></div>
-            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1.5rem;">Save Equipment</button>
-          </form>
-        </section>
-
-        <!-- Log Status Update -->
-        <section id="add-status" class="view-section hidden">
-          <div class="header-bar"><h1>Log Status Update</h1></div>
-          <form id="add-status-form" style="max-width:600px;margin:2rem auto;">
-            <div class="form-group"><label>Date</label><input type="date" id="upd-date" required></div>
-            <div class="form-group"><label>Time</label><input type="time" id="upd-time" required></div>
-            <div class="form-group"><label>Equipment ID</label><input list="loco-list" id="upd-equipment" required></div>
-            <div class="form-group"><label>Status</label>
-              <select id="upd-status" required>
-                <option value="Down">Down</option>
-                <option value="Fixed">Fixed</option>
-              </select>
-            </div>
-            <div class="form-group"><label>Shift</label>
-              <select id="upd-shift" required>
-                <option>Morning</option><option>Afternoon</option><option>Night</option>
-              </select>
-            </div>
-            <div class="form-group"><label>Reason / Fault</label><textarea id="upd-reason" rows="3" required></textarea></div>
-            <div class="form-group"><label>Downtime Hours</label><input type="number" step="0.1" min="0" id="upd-downtime" value="0"></div>
-            <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1.5rem;">Submit Update</button>
-          </form>
-        </section>
-
-        <!-- Full Log -->
-        <section id="status-log" class="view-section hidden">
-          <div class="header-bar">
-            <h1>Full Status Log</h1>
-          </div>
-          <div style="overflow-x:auto;">
-            <table id="full-log-table">
-              <thead>
-                <tr>
-                  <th>Date</th><th>Time</th><th>Equipment</th><th>Status</th><th>Shift</th><th>Reason</th><th>Down Hrs</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- Fleet Summary -->
-        <section id="summary" class="view-section hidden">
-          <div class="header-bar"><h1>Fleet Summary</h1></div>
-          <div style="overflow-x:auto;">
-            <table id="summary-table">
-              <thead>
-                <tr>
-                  <th>ID</th><th>Shaft</th><th>Level</th><th>Size</th><th>Section</th><th>Last Status</th><th>Last Update</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- Equipment Register -->
-        <section id="manage-equipment" class="view-section hidden">
-          <div class="header-bar"><h1>Equipment Register</h1></div>
-          <div style="overflow-x:auto;">
-            <table id="equipment-table">
-              <thead>
-                <tr><th>Shaft</th><th>Level</th><th>Size</th><th>ID</th><th>Section</th></tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- Maintenance Schedule -->
-        <section id="maintenance-schedule" class="view-section hidden">
-          <div class="header-bar">
-            <h1>Maintenance Plan</h1>
-            <button class="btn btn-primary" onclick="document.getElementById('maint-modal').classList.add('active')">+ Add Task</button>
-          </div>
-          <div style="overflow-x:auto;">
-            <table id="maintenance-table">
-              <thead>
-                <tr><th>Equipment</th><th>Task</th><th>Interval</th><th>Last Done</th></tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </section>
-
-      </div>
-    </main>
+<!-- Maintenance Modal -->
+<div id="maint-modal" class="modal">
+  <div class="modal-content">
+    <h3>Add Maintenance Task</h3>
+    <form id="add-maint-form">
+      <div class="form-group"><label>Equipment ID</label><input list="loco-list" required></div>
+      <div class="form-group"><label>Task</label><input type="text" required></div>
+      <div class="form-group"><label>Interval</label><select required><option>weekly</option><option>monthly</option><option>quarterly</option></select></div>
+      <div class="form-group"><label>Last Done</label><input type="date" required></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;">Add Task</button>
+    </form>
+    <button onclick="document.getElementById('maint-modal').classList.remove('active')" style="margin-top:1rem;color:var(--danger);">Cancel</button>
   </div>
-
-  <div class="live-indicator"><i class="fas fa-circle" style="font-size:0.7rem;"></i> LIVE</div>
-
-  <datalist id="loco-list"></datalist>
-
-  <!-- Maintenance Modal -->
-  <div id="maint-modal" class="modal">
-    <div class="modal-content">
-      <h3>Add Maintenance Task</h3>
-      <form id="add-maint-form">
-        <div class="form-group"><label>Equipment ID</label><input list="loco-list" required></div>
-        <div class="form-group"><label>Task</label><input type="text" required></div>
-        <div class="form-group"><label>Interval</label>
-          <select required>
-            <option>weekly</option>
-            <option>monthly</option>
-            <option>quarterly</option>
-          </select>
-        </div>
-        <div class="form-group"><label>Last Done</label><input type="date" required></div>
-        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;">Add Task</button>
-      </form>
-      <button onclick="document.getElementById('maint-modal').classList.remove('active')" style="margin-top:1rem;color:var(--danger);">Cancel</button>
-    </div>
-  </div>
-
 </div>
 
 <script type="module">
-  // ────────────────────────────────────────────────
-  // Firebase v10 Modular
-  // ────────────────────────────────────────────────
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-  import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+  const { initializeApp, getAuth, onAuthStateChanged, signOut,
+         getFirestore, collection, doc, setDoc, addDoc, onSnapshot, serverTimestamp, query, orderBy } = window.firebaseModules;
 
   const firebaseConfig = {
     apiKey: "AIzaSyCnDsQVhQxk9Q7axCPcMSpHDcqOonBbNMc",
@@ -307,84 +266,48 @@
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = getFirestore(app);
+  const db   = getFirestore(app);
 
   let equipment = [];
   let updates = [];
   let maintenance = [];
 
-  // ── Auth UI ─────────────────────────────────────────────────────
-  const authSection = document.getElementById('auth-section');
-  const appDiv = document.getElementById('app');
-  const authForm = document.getElementById('auth-form');
-  const authTitle = document.getElementById('auth-title');
-  const authSubmit = document.getElementById('auth-submit');
-  const toggleLink = document.getElementById('toggle-auth');
-  const authError = document.getElementById('auth-error');
-
-  let isLoginMode = true;
-
-  toggleLink.onclick = e => {
-    e.preventDefault();
-    isLoginMode = !isLoginMode;
-    authTitle.textContent = isLoginMode ? "Sign In" : "Create Account";
-    authSubmit.textContent = isLoginMode ? "Sign In" : "Register";
-    toggleLink.textContent = isLoginMode ? "Create an account" : "Already have an account? Sign in";
-  };
-
-  authForm.onsubmit = async e => {
-    e.preventDefault();
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    authError.textContent = "";
-
-    try {
-      if (isLoginMode) {
-        await signInWithEmailAndPassword(auth, email, password);
-      } else {
-        await createUserWithEmailAndPassword(auth, email, password);
-      }
-    } catch (err) {
-      let msg = err.message;
-      if (msg.includes('wrong-password')) msg = 'Wrong password';
-      else if (msg.includes('user-not-found')) msg = 'Account not found';
-      else if (msg.includes('email-already-in-use')) msg = 'Email already in use';
-      else msg = err.message;
-      authError.textContent = msg;
-    }
-  };
-
-  document.getElementById('logout-btn').onclick = () => signOut(auth);
-
+  // ── Auth state ───────────────────────────────────────────
   onAuthStateChanged(auth, user => {
     if (user) {
-      authSection.classList.add('hidden');
-      appDiv.classList.remove('hidden');
+      document.getElementById('app').classList.remove('hidden');
       startRealtimeListeners();
     } else {
-      authSection.classList.remove('hidden');
-      appDiv.classList.add('hidden');
+      alert("Not signed in. Please sign in first (this page no longer shows login form).");
+      // You could redirect to a login page here, or implement anonymous sign-in:
+      // signInAnonymously(auth).catch(console.error);
     }
   });
 
-  // ── Real-time listeners ─────────────────────────────────────────
+  function logout() {
+    signOut(auth).then(() => {
+      location.reload();
+    }).catch(err => alert("Logout failed: " + err.message));
+  }
+
+  // ── Real-time listeners ─────────────────────────────────
   function startRealtimeListeners() {
     onSnapshot(collection(db, "equipment"), snap => {
       equipment = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       fillDatalist();
       fillShaftSelect();
       renderCurrentView();
-    });
+    }, err => console.error("Equipment listen error:", err));
 
     onSnapshot(query(collection(db, "status_updates"), orderBy("date","desc"), orderBy("time","desc")), snap => {
       updates = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderCurrentView();
-    });
+    }, err => console.error("Updates listen error:", err));
 
     onSnapshot(collection(db, "maintenance"), snap => {
       maintenance = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       renderCurrentView();
-    });
+    }, err => console.error("Maintenance listen error:", err));
   }
 
   function fillDatalist() {
@@ -398,7 +321,7 @@
     document.getElementById('eq-shaft').innerHTML = '<option value="">Select Shaft</option>' + html;
   }
 
-  // ── Navigation ──────────────────────────────────────────────────
+  // ── Navigation ──────────────────────────────────────────
   document.querySelectorAll('#sidebar-menu li').forEach(li => {
     li.addEventListener('click', () => {
       document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
@@ -438,7 +361,7 @@
         <td>${u.equipmentId || '-'}</td>
         <td>${u.status || '-'}</td>
         <td>${u.shift || '-'}</td>
-        <td>${(u.reason || '').substring(0,60)}${(u.reason||'').length > 60 ? '...' : ''}</td>
+        <td title="${u.reason||''}">${(u.reason||'').substring(0,60)}${(u.reason||'').length>60?'...':''}</td>
         <td>${u.downtimeHours || 0}</td>
       </tr>
     `).join('');
@@ -483,7 +406,7 @@
     `).join('');
   }
 
-  // ── Add Equipment ───────────────────────────────────────────────
+  // ── Add Equipment ───────────────────────────────────────
   document.getElementById('add-equipment-form').addEventListener('submit', async e => {
     e.preventDefault();
     const id = document.getElementById('eq-id').value.trim();
@@ -503,11 +426,11 @@
       alert('Equipment saved');
       e.target.reset();
     } catch (err) {
-      alert('Error: ' + err.message);
+      alert('Error saving equipment: ' + err.message);
     }
   });
 
-  // ── Add Status Update ───────────────────────────────────────────
+  // ── Add Status Update ───────────────────────────────────
   document.getElementById('add-status-form').addEventListener('submit', async e => {
     e.preventDefault();
 
@@ -536,14 +459,15 @@
     }
   });
 
-  // ── Add Maintenance Task ────────────────────────────────────────
+  // ── Add Maintenance Task ────────────────────────────────
   document.getElementById('add-maint-form').addEventListener('submit', async e => {
     e.preventDefault();
+    const f = e.target;
     const data = {
-      equipment: e.target[0].value.trim(),
-      task:      e.target[1].value.trim(),
-      interval:  e.target[2].value,
-      lastDone:  e.target[3].value,
+      equipment: f[0].value.trim(),
+      task:      f[1].value.trim(),
+      interval:  f[2].value,
+      lastDone:  f[3].value,
       createdAt: serverTimestamp()
     };
 
@@ -551,19 +475,19 @@
       await addDoc(collection(db, "maintenance"), data);
       alert('Maintenance task added');
       document.getElementById('maint-modal').classList.remove('active');
-      e.target.reset();
+      f.reset();
     } catch (err) {
       alert('Error: ' + err.message);
     }
   });
 
-  // ── Theme toggle ────────────────────────────────────────────────
+  // ── Theme toggle ────────────────────────────────────────
   function toggleTheme() {
     document.documentElement.toggleAttribute('data-theme');
     document.getElementById('theme-toggle').textContent = document.documentElement.hasAttribute('data-theme') ? '🌙' : '☀️';
   }
 
-  // Start with dashboard visible
+  // Start on dashboard
   document.getElementById('dashboard').classList.remove('hidden');
 </script>
 </body>
