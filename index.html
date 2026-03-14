@@ -1328,4 +1328,34 @@
   document.getElementById('search-form').addEventListener('submit', e => {
     e.preventDefault();
     searchStatus(
-      document.getElementById('s-loco
+      document.getElementById('s-loco').value,
+      document.getElementById('s-date').value,
+      document.getElementById('show-all-history').checked
+    );
+  });
+
+  // ── Theme toggle (RBE1) ──────────────────────────────────────────────────
+  function toggleTheme() {
+    const html = document.documentElement;
+    if (html.getAttribute('data-theme') === 'dark') {
+      html.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+      document.getElementById('theme-toggle').innerHTML = '☀️';
+    } else {
+      html.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+      document.getElementById('theme-toggle').innerHTML = '🌙';
+    }
+  }
+
+  // ── Initial load (RBE1 style but no localStorage seeding – Firebase will handle) ──────────────────────────────────────────────────
+  if (localStorage.getItem('theme') === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('theme-toggle').innerHTML = '🌙';
+  }
+
+  fillDatalist();
+  show('dashboard');
+</script>
+</body>
+</html>
