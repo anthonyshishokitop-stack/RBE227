@@ -69,6 +69,7 @@
     .container { max-width:1800px; margin:0 auto; }
     .header-bar { background:linear-gradient(135deg, #1d4ed8, #3b82f6); color:white; padding:1.1rem 1.3rem; border-radius:var(--radius-lg) var(--radius-lg) 0 0; margin:-1rem -1rem 1.25rem; display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; align-items:center; box-shadow:var(--shadow); }
     .header-bar h1 { font-size: clamp(1.35rem, 4.5vw, 1.75rem); font-weight:700; letter-spacing:-0.025em; }
+    .role-badge { background:rgba(255,255,255,0.25); padding:0.35rem 0.9rem; border-radius:999px; font-size:0.85rem; font-weight:600; }
     h2 { font-size: clamp(1.18rem, 3.8vw, 1.35rem); font-weight:700; color:var(--primary); margin-bottom:1rem; }
     .card { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--shadow); padding:1.25rem; margin-bottom:1.25rem; border:1px solid var(--border); }
     .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(155px, 1fr)); gap:1rem; margin:1.25rem 0; }
@@ -138,6 +139,23 @@
   <form id="auth-form">
     <div class="form-group"><label>Email</label><input id="email" type="email" required autocomplete="email"></div>
     <div class="form-group"><label>Password</label><input id="password" type="password" required autocomplete="current-password"></div>
+    
+    <!-- Role-Based Access Fields -->
+    <div id="role-container" class="form-group hidden">
+      <label>Role</label>
+      <select id="role" required>
+        <option value="user">User (View Only)</option>
+        <option value="admin">Admin (Shaft Admin)</option>
+        <option value="master">Master Developer (Full Access)</option>
+      </select>
+    </div>
+    <div id="shaft-container" class="form-group hidden">
+      <label>Assigned Shaft</label>
+      <select id="reg-shaft" required>
+        <option value="">Select Shaft</option>
+      </select>
+    </div>
+
     <button type="submit" class="btn btn-primary" style="width:100%;margin-top:1rem;" id="auth-submit">Sign In</button>
   </form>
   <p style="margin-top:1.2rem;text-align:center;">
@@ -181,7 +199,10 @@
         <!-- DASHBOARD -->
         <section id="dashboard">
           <div class="header-bar">
-            <h1>Real-time RBE Monitoring – Platinum Operations</h1>
+            <div>
+              <h1>Real-time RBE Monitoring – Platinum Operations</h1>
+              <div id="user-role-info" class="role-badge" style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;"></div>
+            </div>
             <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
               <select id="shaft-filter" onchange="filterDashboard()">
                 <option value="">All Shafts</option>
@@ -479,11 +500,11 @@
 
 <script type="module">
   // ────────────────────────────────────────────────
-  // Firebase v10 Modular
+  // Firebase v10 Modular + RBAC
   // ────────────────────────────────────────────────
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
   import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-  import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, serverTimestamp, query, orderBy, deleteDoc, updateDoc, where, getDocs } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+  import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, serverTimestamp, query, orderBy, deleteDoc, updateDoc, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCnDsQVhQxk9Q7axCPcMSpHDcqOonBbNMc",
@@ -510,6 +531,10 @@
   let columnHeaders = [];
   let selectedMapping = {};
 
+  // RBAC globals
+  let currentUserRole = null;
+  let currentUserShaft = null;
+
   // ── Auth UI ─────────────────────────────────────────────────────
   const authSection = document.getElementById('auth-section');
   const appDiv = document.getElementById('app');
@@ -521,12 +546,34 @@
 
   let isLoginMode = true;
 
+  // Show/hide role & shaft fields only on register
   toggleLink.onclick = e => {
     e.preventDefault();
     isLoginMode = !isLoginMode;
     authTitle.textContent = isLoginMode ? "Sign In" : "Create Account";
     authSubmit.textContent = isLoginMode ? "Sign In" : "Register";
     toggleLink.textContent = isLoginMode ? "Create an account" : "Already have an account? Sign in";
+
+    if (!isLoginMode) {
+      document.getElementById('role-container').classList.remove('hidden');
+      document.getElementById('shaft-container').classList.remove('hidden');
+      // default to user
+      document.getElementById('role').value = 'user';
+    } else {
+      document.getElementById('role-container').classList.add('hidden');
+      document.getElementById('shaft-container').classList.add('hidden');
+    }
+  };
+
+  // Role change → toggle shaft field
+  document.getElementById('role').onchange = () => {
+    const roleVal = document.getElementById('role').value;
+    const shaftContainer = document.getElementById('shaft-container');
+    if (roleVal === 'master') {
+      shaftContainer.classList.add('hidden');
+    } else {
+      shaftContainer.classList.remove('hidden');
+    }
   };
 
   authForm.onsubmit = async e => {
@@ -539,26 +586,58 @@
       if (isLoginMode) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const role = document.getElementById('role').value;
+        let shaft = null;
+        if (role !== 'master') {
+          shaft = document.getElementById('reg-shaft').value;
+          if (!shaft) return authError.textContent = 'Shaft is required for User/Admin';
+        }
+
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        const uid = cred.user.uid;
+
+        await setDoc(doc(db, "users", uid), {
+          email: email,
+          role: role,
+          shaft: shaft,
+          createdAt: serverTimestamp()
+        });
       }
     } catch (err) {
       let msg = err.message;
       if (msg.includes('wrong-password')) msg = 'Wrong password';
       else if (msg.includes('user-not-found')) msg = 'Account not found';
       else if (msg.includes('email-already-in-use')) msg = 'Email already in use';
-      else msg = err.message;
       authError.textContent = msg;
     }
   };
 
   document.getElementById('logout-btn').onclick = () => signOut(auth);
 
-  onAuthStateChanged(auth, user => {
+  // ── Role-aware onAuthStateChanged ─────────────────────────────────
+  onAuthStateChanged(auth, async user => {
     if (user) {
+      // Fetch role & shaft
+      const userSnap = await getDoc(doc(db, "users", user.uid));
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        currentUserRole = data.role || 'user';
+        currentUserShaft = data.shaft || '';
+      } else {
+        currentUserRole = 'user';
+        currentUserShaft = '';
+      }
+
       authSection.classList.add('hidden');
       appDiv.classList.remove('hidden');
+
       startRealtimeListeners();
+      applyRoleRestrictions();
+      fillDatalist();
+      show('dashboard');
     } else {
+      currentUserRole = null;
+      currentUserShaft = null;
       authSection.classList.remove('hidden');
       appDiv.classList.add('hidden');
     }
@@ -588,12 +667,51 @@
     });
   }
 
+  // ── Role-based UI restrictions ──────────────────────────────────
+  function applyRoleRestrictions() {
+    const isUser = currentUserRole === 'user';
+    const isMaster = currentUserRole === 'master';
+
+    // Hide editing sections from USER menu
+    document.querySelectorAll('#sidebar-menu li').forEach(li => {
+      const section = li.dataset.section;
+      if (isUser && ['add-equipment','add-status','manage-equipment','maintenance-schedule','import-spreadsheet'].includes(section)) {
+        li.style.display = 'none';
+      } else {
+        li.style.display = '';
+      }
+    });
+
+    // Hide shaft filters for non-master
+    const shaftFilterEl = document.getElementById('shaft-filter');
+    const crShaftFilterEl = document.getElementById('cr-shaft-filter');
+    if (!isMaster) {
+      shaftFilterEl.style.display = 'none';
+      crShaftFilterEl.style.display = 'none';
+    } else {
+      shaftFilterEl.style.display = '';
+      crShaftFilterEl.style.display = '';
+    }
+
+    // Show role badge in header (dashboard)
+    const roleInfo = document.getElementById('user-role-info');
+    if (currentUserRole) {
+      roleInfo.innerHTML = `
+        <i class="fas fa-user-shield"></i>
+        ${currentUserRole.toUpperCase()} 
+        ${currentUserShaft ? `(${currentUserShaft})` : '(ALL SHAFTS)'}
+      `;
+      roleInfo.style.display = 'inline-flex';
+    }
+  }
+
   // ── Navigation & Refresh ────────────────────────────────────────
   function show(section) {
     document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
     document.getElementById(section).classList.remove('hidden');
     document.querySelectorAll('#sidebar-menu li').forEach(li => li.classList.remove('active'));
-    document.querySelector(`[data-section="${section}"]`).classList.add('active');
+    const activeLi = document.querySelector(`[data-section="${section}"]`);
+    if (activeLi) activeLi.classList.add('active');
     if (window.innerWidth < 1025) document.getElementById('sidebar').classList.remove('open');
     refreshCurrentView();
   }
@@ -615,13 +733,18 @@
     li.addEventListener('click', () => show(li.dataset.section));
   });
 
-  // ── Utility functions ───────────────────────────────────────────
+  // ── Utility functions (RBAC aware) ──────────────────────────────
   function fillDatalist() {
+    let eqToShow = equipment;
+    if (currentUserRole && currentUserRole !== 'master') {
+      eqToShow = equipment.filter(e => (e.shaft || '') === currentUserShaft);
+    }
+
     const dl = document.getElementById('loco-list');
-    dl.innerHTML = equipment.map(e => `<option value="${e.id}"></option>`).join('');
+    dl.innerHTML = eqToShow.map(e => `<option value="${e.id}"></option>`).join('');
 
     const job = document.getElementById('job-loco');
-    job.innerHTML = '<option value="">Select Equipment</option>' + equipment.map(e => `<option value="${e.id}">${e.id}</option>`).join('');
+    job.innerHTML = '<option value="">Select Equipment</option>' + eqToShow.map(e => `<option value="${e.id}">${e.id}</option>`).join('');
 
     const shafts = [
       '0 Shaft','1 Shaft','2 Shaft','3 Shaft','4 Shaft','5 Shaft','6 Shaft','7 Shaft','7A Shaft','8 Shaft','9 Shaft','10 Shaft','10D',
@@ -632,21 +755,30 @@
       '373-KT (De Grooteboom)','374-KT (Tweefontein)','Leeuwkop Shaft'
     ];
 
+    // Shaft select in ADD EQUIPMENT - lock to user shaft if not master
     const shaftSelect = document.getElementById('shaft');
-    shaftSelect.innerHTML = '<option value="">Select Shaft</option>' + shafts.map(s => `<option value="${s}">${s}</option>`).join('');
+    if (currentUserRole && currentUserRole !== 'master') {
+      shaftSelect.innerHTML = `<option value="${currentUserShaft}" selected>${currentUserShaft}</option>`;
+    } else {
+      shaftSelect.innerHTML = '<option value="">Select Shaft</option>' + shafts.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
 
-    const shaftFilter = document.getElementById('shaft-filter');
-    shaftFilter.innerHTML = '<option value="">All Shafts</option>' + shafts.map(s => `<option value="${s}">${s}</option>`).join('');
-
-    const crShaftFilter = document.getElementById('cr-shaft-filter');
-    crShaftFilter.innerHTML = '<option value="">All Shafts</option>' + shafts.map(s => `<option value="${s}">${s}</option>`).join('');
-
+    // IMPORT shaft - lock for admin/user
     const importShaft = document.getElementById('import-shaft');
-    importShaft.innerHTML = '<option value="">Do not set shaft (use equipment lookup)</option>' + shafts.map(s => `<option value="${s}">${s}</option>`).join('');
+    if (currentUserRole && currentUserRole !== 'master') {
+      importShaft.innerHTML = `<option value="${currentUserShaft}" selected>${currentUserShaft}</option>`;
+    } else {
+      importShaft.innerHTML = '<option value="">Do not set shaft (use equipment lookup)</option>' + shafts.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+
+    // CR filter already hidden for non-master
   }
 
   function getFilteredEquipment() {
-    return currentShaftFilter ? equipment.filter(e => (e.shaft || '') === currentShaftFilter) : equipment;
+    if (currentUserRole === 'master') {
+      return currentShaftFilter ? equipment.filter(e => (e.shaft || '') === currentShaftFilter) : equipment;
+    }
+    return equipment.filter(e => (e.shaft || '') === currentUserShaft);
   }
 
   function getFilteredUpdates() {
@@ -664,6 +796,7 @@
     return delaysData.filter(d => ids.includes(d.equipment));
   }
 
+  // ── Status helper (unchanged) ───────────────────────────────────
   function getEquipmentStatus(id) {
     const eu = updates.filter(u => u.equipmentId === id).sort((a,b) => new Date(b.date+' '+b.time) - new Date(a.date+' '+a.time));
     if (!eu.length) return {status:'Up', downtime:0, availability:'100.0', lastUpdate:'-', color:'green'};
@@ -690,8 +823,8 @@
   function calculateNextDue(last, interval) {
     if (!last) return null;
     const d = new Date(last);
-    if (interval==='weekly')      d.setDate(d.getDate()+7);
-    else if (interval==='monthly')   d.setMonth(d.getMonth()+1);
+    if (interval==='weekly') d.setDate(d.getDate()+7);
+    else if (interval==='monthly') d.setMonth(d.getMonth()+1);
     else if (interval==='quarterly') d.setMonth(d.getMonth()+3);
     return d.toISOString().slice(0,10);
   }
@@ -746,22 +879,19 @@
 
     if (charts.avail) charts.avail.destroy();
     charts.avail = new Chart(document.getElementById('availabilityChart'), {
-      type:'bar',
-      data:{ labels:locoIds, datasets:[{data:availData, backgroundColor:'#1d4ed8'}] },
+      type:'bar', data:{ labels:locoIds, datasets:[{data:availData, backgroundColor:'#1d4ed8'}] },
       options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,max:100}} }
     });
 
     if (charts.failures) charts.failures.destroy();
     charts.failures = new Chart(document.getElementById('failuresChart'), {
-      type:'bar',
-      data:{ labels:locoIds, datasets:[{data:failureData, backgroundColor:'#dc2626'}] },
+      type:'bar', data:{ labels:locoIds, datasets:[{data:failureData, backgroundColor:'#dc2626'}] },
       options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
     });
 
     if (charts.mttf) charts.mttf.destroy();
     charts.mttf = new Chart(document.getElementById('mttfChart'), {
-      type:'bar',
-      data:{ labels:locoIds, datasets:[{data:mttfData, backgroundColor:'#ea580c'}] },
+      type:'bar', data:{ labels:locoIds, datasets:[{data:mttfData, backgroundColor:'#ea580c'}] },
       options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
     });
 
@@ -794,13 +924,23 @@
   }
 
   function filterDashboard() {
+    if (currentUserRole !== 'master') return;
     currentShaftFilter = document.getElementById('shaft-filter').value;
     refreshCurrentView();
   }
 
-  // ── Other populate functions ────────────────────────────────────
+  // ── Permission checks ───────────────────────────────────────────
+  function hasEditPermission(equipmentId) {
+    if (currentUserRole === 'master') return true;
+    if (currentUserRole === 'user') return false;
+    const eq = equipment.find(e => e.id === equipmentId);
+    return eq && eq.shaft === currentUserShaft;
+  }
+
+  // ── Other populate functions (RBAC filtered) ─────────────────────
   function populateOperationsReport() {
-    const allIds = equipment.map(e => e.id);
+    const filteredEq = getFilteredEquipment();
+    const allIds = filteredEq.map(e => e.id);
     const statusSummary = {Up:0, Down:0};
     const problemRows = [];
     const highRiskRows = [];
@@ -866,7 +1006,13 @@
   }
 
   function removeEquipment(locoNumber) {
+    if (currentUserRole === 'user') return alert('Read-only User - cannot delete');
+    const eq = equipment.find(e => e.id === locoNumber);
+    if (currentUserRole === 'admin' && eq && eq.shaft !== currentUserShaft) {
+      return alert('You can only manage your assigned shaft');
+    }
     if (!confirm(`Remove ${locoNumber} and ALL related data?`)) return;
+
     (async () => {
       try {
         await deleteDoc(doc(db, "equipment", locoNumber));
@@ -915,8 +1061,9 @@
   }
 
   function populateMaintTable() {
+    const filteredMt = getFilteredMaintenance();
     const tbody = document.querySelector('#maint-table tbody');
-    tbody.innerHTML = maintenance.map(m => {
+    tbody.innerHTML = filteredMt.map(m => {
       const days = calculateDaysLeft(m.lastDone, m.interval);
       const disp = isNaN(days) ? '-' : (days>=0 ? days : Math.abs(days)+' overdue');
       return `<tr><td>${m.equipment}</td><td>${m.task}</td><td>${m.interval}</td><td>${m.lastDone}</td><td>${calculateNextDue(m.lastDone,m.interval)||'-'}</td><td>${disp}</td><td><button onclick="editMaint('${m.id}')" class="btn btn-primary">Edit</button><button onclick="deleteMaint('${m.id}')" class="btn btn-danger">Delete</button></td></tr>`;
@@ -924,7 +1071,8 @@
   }
 
   function getMaintenanceEvents() {
-    return maintenance.map(task => {
+    const filteredMt = getFilteredMaintenance();
+    return filteredMt.map(task => {
       if (!task.lastDone) return null;
       const due = calculateNextDue(task.lastDone, task.interval);
       const days = calculateDaysLeft(task.lastDone, task.interval);
@@ -952,6 +1100,10 @@
   function editMaint(id) {
     const m = maintenance.find(mm => mm.id === id);
     if (!m) return;
+    if (currentUserRole === 'user' || !hasEditPermission(m.equipment)) {
+      alert('No permission to edit this task');
+      return;
+    }
     document.getElementById('edit-index').value = id;
     document.getElementById('edit-equipment').value = m.equipment;
     document.getElementById('edit-task').value = m.task;
@@ -961,12 +1113,17 @@
   }
 
   function deleteMaint(id) {
+    const m = maintenance.find(mm => mm.id === id);
+    if (!m || currentUserRole === 'user' || !hasEditPermission(m.equipment)) {
+      alert('No permission to delete this task');
+      return;
+    }
     if (confirm('Delete this task?')) {
       deleteDoc(doc(db, "maintenance", id)).then(() => refreshCurrentView());
     }
   }
 
-  // ── Export functions ────────────────────────────────────────────
+  // ── Export functions (unchanged) ────────────────────────────────
   function exportDashboardPDF() {
     html2canvas(document.getElementById('dashboard'), {scale:2}).then(canvas => {
       const {jsPDF} = window.jspdf;
@@ -1050,7 +1207,7 @@
     const {jsPDF} = window.jspdf;
     const doc = new jsPDF();
     doc.text("Maintenance Schedule", 20, 20);
-    const data = maintenance.map(m => [m.equipment, m.task, m.interval, m.lastDone, calculateNextDue(m.lastDone,m.interval)||'-', calculateDaysLeft(m.lastDone,m.interval)]);
+    const data = getFilteredMaintenance().map(m => [m.equipment, m.task, m.interval, m.lastDone, calculateNextDue(m.lastDone,m.interval)||'-', calculateDaysLeft(m.lastDone,m.interval)]);
     doc.autoTable({head:[['Equipment','Task','Interval','Last Done','Due','Days Left']], body:data, startY:35});
     doc.save('Maintenance_Schedule.pdf');
   }
@@ -1068,32 +1225,27 @@
   }
 
   function populateControlRoom() {
-    const shaftFilter = document.getElementById('cr-shaft-filter')?.value || '';
-    const dateFilterRaw = document.getElementById('cr-date-filter')?.value || '';
-
     let filtered = updates.filter(u => u.source === 'Imported Breakdown Report');
 
-    if (shaftFilter) {
-      const shaftEq = equipment.filter(e => e.shaft === shaftFilter);
-      const shaftIds = shaftEq.map(e => e.id);
-      filtered = filtered.filter(u =>
-        (u.shaft && u.shaft === shaftFilter) ||
-        shaftIds.includes(u.equipmentId)
-      );
-    }
-
-    if (dateFilterRaw) {
-      const targetDate = dateFilterRaw.trim();
-      filtered = filtered.filter(u => (u.date || '').trim() === targetDate);
+    if (currentUserRole !== 'master') {
+      const shaftIds = getFilteredEquipment().map(e => e.id);
+      filtered = filtered.filter(u => shaftIds.includes(u.equipmentId) || (u.shaft && u.shaft === currentUserShaft));
+    } else {
+      const shaftFilter = document.getElementById('cr-shaft-filter')?.value || '';
+      const dateFilterRaw = document.getElementById('cr-date-filter')?.value || '';
+      if (shaftFilter) {
+        const shaftEq = equipment.filter(e => e.shaft === shaftFilter);
+        const shaftIds = shaftEq.map(e => e.id);
+        filtered = filtered.filter(u => (u.shaft && u.shaft === shaftFilter) || shaftIds.includes(u.equipmentId));
+      }
+      if (dateFilterRaw) {
+        filtered = filtered.filter(u => (u.date || '').trim() === dateFilterRaw.trim());
+      }
     }
 
     const tbody = document.querySelector('#control-room-table tbody');
     tbody.innerHTML = filtered
-      .sort((a,b) => {
-        const da = new Date(a.date + ' ' + (a.time || '00:00'));
-        const db = new Date(b.date + ' ' + (b.time || '00:00'));
-        return db - da;
-      })
+      .sort((a,b) => new Date(b.date + ' ' + (b.time || '00:00')) - new Date(a.date + ' ' + (a.time || '00:00')))
       .map(u => `<tr>
         <td>${u.date || '-'}</td>
         <td>${u.time || '-'}</td>
@@ -1124,7 +1276,7 @@
     link.click();
   }
 
-  // ── Import Excel ────────────────────────────────────────────────
+  // ── Import Excel (shaft forced for non-master) ───────────────────
   function handleFileUpload() {
     const file = document.getElementById('excel-file').files[0];
     if (!file) return alert('Select Excel file');
@@ -1209,8 +1361,9 @@
   async function importSelectedRows() {
     const checked = document.querySelectorAll('.row-select:checked');
     if (!checked.length) return alert('No rows selected');
-    const selectedShaft = document.getElementById('import-shaft').value;
     let count = 0;
+    const selectedShaft = document.getElementById('import-shaft').value || currentUserShaft;
+
     for (let chk of checked) {
       const idx = parseInt(chk.dataset.index);
       const row = excelData[idx];
@@ -1240,12 +1393,11 @@
         downtimeHours: parseFloat(downtimeHrs.toFixed(2)),
         isFailure: '1',
         source: 'Imported Breakdown Report',
-        shaft: selectedShaft || '',
+        shaft: selectedShaft,
         createdAt: serverTimestamp()
       };
       await addDoc(collection(db, "status_updates"), importedUpdate);
 
-      // Auto-create equipment record if shaft is selected and equipment doesn't exist
       if (selectedShaft && !equipment.some(e => e.id === equipment)) {
         await setDoc(doc(db, "equipment", equipment), {
           shaft: selectedShaft,
@@ -1263,14 +1415,20 @@
     document.getElementById('mapping-section').classList.add('hidden');
   }
 
-  // ── Form listeners ──────────────────────────────────────────────
+  // ── Form listeners with RBAC checks ─────────────────────────────
   document.getElementById('add-eq-form').addEventListener('submit', async e => {
     e.preventDefault();
+    if (currentUserRole === 'user') return alert('Read-only User');
+    const selectedShaft = document.getElementById('shaft').value;
+    if (currentUserRole === 'admin' && selectedShaft && selectedShaft !== currentUserShaft) {
+      return alert('You can only add equipment to your assigned shaft');
+    }
+
     const id = document.getElementById('loco-number').value.trim();
     if (!id) return alert('Equipment ID required');
 
     const data = {
-      shaft: document.getElementById('shaft').value,
+      shaft: selectedShaft,
       level: document.getElementById('level').value,
       locoSize: document.getElementById('loco-size').value,
       section: document.getElementById('section').value
@@ -1287,8 +1445,15 @@
 
   document.getElementById('add-status-form').addEventListener('submit', async e => {
     e.preventDefault();
+    if (currentUserRole === 'user') return alert('Read-only User');
+    const equipId = document.getElementById('u-loco').value.trim();
+    const eq = equipment.find(e => e.id === equipId);
+    if (currentUserRole === 'admin' && eq && eq.shaft !== currentUserShaft) {
+      return alert('You can only update equipment in your assigned shaft');
+    }
+
     const data = {
-      equipmentId: document.getElementById('u-loco').value.trim(),
+      equipmentId: equipId,
       date: document.getElementById('u-date').value,
       time: document.getElementById('u-time').value,
       status: document.getElementById('u-status').value,
@@ -1316,6 +1481,11 @@
   document.getElementById('edit-maint-form').addEventListener('submit', async e => {
     e.preventDefault();
     const id = document.getElementById('edit-index').value;
+    const m = maintenance.find(mm => mm.id === id);
+    if (!m || !hasEditPermission(m.equipment)) {
+      alert('No permission');
+      return;
+    }
     const data = {
       equipment: document.getElementById('edit-equipment').value,
       task: document.getElementById('edit-task').value,
@@ -1333,9 +1503,16 @@
 
   document.getElementById('add-maint-form').addEventListener('submit', async e => {
     e.preventDefault();
+    if (currentUserRole === 'user') return alert('Read-only User');
     const f = e.target;
+    const equip = f[0].value;
+    const eq = equipment.find(e => e.id === equip);
+    if (currentUserRole === 'admin' && eq && eq.shaft !== currentUserShaft) {
+      return alert('You can only add maintenance for your assigned shaft');
+    }
+
     const data = {
-      equipment: f[0].value,
+      equipment: equip,
       task: f[1].value,
       interval: f[2].value,
       lastDone: f[3].value
@@ -1379,7 +1556,18 @@
     document.getElementById('theme-toggle').innerHTML = '🌙';
   }
 
-  fillDatalist();
+  // Populate shaft options for registration (always all shafts)
+  const regShaftSelect = document.getElementById('reg-shaft');
+  const allShafts = [
+    '0 Shaft','1 Shaft','2 Shaft','3 Shaft','4 Shaft','5 Shaft','6 Shaft','7 Shaft','7A Shaft','8 Shaft','9 Shaft','10 Shaft','10D',
+    '11 Shaft','11C Shaft','11D','12 Shaft','12 North Shaft','12S','14 Shaft','14D','16 Shaft','17 Shaft','20 Shaft',
+    'CLAPHAM','DRIKOP','E&F Shaft','NORTH SHAFT','SOUTH SHAFT','STYLDRIFT','Winnaarshoek','Forest Hill',
+    'Offset Underground','UG2 Main Decline','Merensky Main Decline','UG2 North Decline',
+    '367-KT (Kalkfontein)','368-KT (Buffelshoek)','370-KT (Richmond)','372-KT (Dwarsrivier)',
+    '373-KT (De Grooteboom)','374-KT (Tweefontein)','Leeuwkop Shaft'
+  ];
+  regShaftSelect.innerHTML = '<option value="">Select Shaft</option>' + allShafts.map(s => `<option value="${s}">${s}</option>`).join('');
+
   show('dashboard');
 </script>
 </body>
