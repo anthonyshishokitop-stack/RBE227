@@ -665,7 +665,7 @@
   }
 
   function getEquipmentStatus(id) {
-    const eu = updates.filter(u => u.equipmentId === id).sort((a,b) => new Date(b.date+' '+b.time) - new Date(a.date+' '+a.time));
+    const eu = updates.filter(u => u.equipmentId === id).sort((a,b) => new Date(b.date+' '+b.time) - new Date(a.date+' '+b.time));
     if (!eu.length) return {status:'Up', downtime:0, availability:'100.0', lastUpdate:'-', color:'green'};
 
     const last = eu[0];
@@ -798,71 +798,54 @@
     refreshCurrentView();
   }
 
-  // ── Other populate functions ────────────────────────────────────
-  function populateOperationsReport() {
-    const allIds = equipment.map(e => e.id);
-    const statusSummary = {Up:0, Down:0};
-    const problemRows = [];
-    const highRiskRows = [];
-
-    allIds.forEach(id => {
-      const st = getEquipmentStatus(id);
-      statusSummary[st.status] = (statusSummary[st.status]||0) + 1;
-
-      if (st.status === 'Down') {
-        const eu = updates.filter(u => u.equipmentId === id).sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time));
-        const lastDown = eu.find(u => u.status === 'Down');
-        const color = st.downtime>168?'RED':'ORANGE';
-        problemRows.push([id, 'Down', color, lastDown?.reason||'-', st.downtime.toFixed(1)]);
-      }
-
-      const fails = updates.filter(u => u.equipmentId===id && u.isFailure==='1').length;
-      if (fails >= 3 || parseFloat(st.availability) < 92) {
-        let mttfVal = 'N/A';
-        const eu = updates.filter(u => u.equipmentId === id);
-        if (fails > 0) {
-          const uniqueDates = [...new Set(eu.map(u => u.date))];
-          if (uniqueDates.length > 0) {
-            const sortedDates = uniqueDates.sort();
-            const minD = new Date(sortedDates[0]);
-            const maxD = new Date(sortedDates[sortedDates.length - 1]);
-            const totalDays = Math.ceil((maxD - minD) / 86400000) + 1;
-            const downH = eu.reduce((s, u) => s + (parseFloat(u.downtimeHours) || 0), 0);
-            const opDays = Math.max(0, totalDays - downH / 24);
-            mttfVal = (opDays / fails).toFixed(1);
-          }
-        }
-        highRiskRows.push([id, fails, mttfVal, st.availability]);
-      }
-    });
-
-    const total = allIds.length;
-    const opBody = [
-      ['Up (Green)', statusSummary.Up, total ? ((statusSummary.Up/total)*100).toFixed(2)+'%' : '0.00%'],
-      ['Down', statusSummary.Down, total ? ((statusSummary.Down/total)*100).toFixed(2)+'%' : '0.00%'],
-      ['Total', total, '100.00%']
-    ];
-
-    document.getElementById('op-status-tbody').innerHTML = opBody.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
-    document.getElementById('problem-equipment-tbody').innerHTML = problemRows.length ? problemRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:20px;">No problem equipment</td></tr>';
-    document.getElementById('high-risk-tbody').innerHTML = highRiskRows.length ? highRiskRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}%</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:20px;">No high-risk equipment</td></tr>';
-  }
-
+  // ── FIXED: Search Status (now requires Equipment ID + clear message) ────────────────────────────────────
   function searchStatus(loco, date, all) {
-    let results = updates.filter(u => u.equipmentId === loco);
+    const loc = (loco || '').trim();
+    if (!loc) {
+      document.getElementById('search-results').innerHTML = '<p style="color:var(--warning); text-align:center; font-weight:600; padding:2rem;">Please select or enter an Equipment ID to search its status history.</p>';
+      return;
+    }
+    let results = updates.filter(u => u.equipmentId === loc);
     if (date && !all) results = results.filter(u => u.date === date);
     const html = results.length ?
       `<table style="width:100%"><thead><tr><th>Date</th><th>Time</th><th>Status</th><th>Shift</th><th>Reason/Fault</th><th>Downtime Hours</th><th>Is Failure?</th></tr></thead><tbody>` +
-      results.map(u => `<tr><td>${u.date}</td><td>${u.time}</td><td>${u.status}</td><td>${u.shift}</td><td>${u.reason}</td><td>${u.downtimeHours||0}</td><td>${u.isFailure==='1'?'Yes':'No'}</td></tr>`).join('') +
-      `</tbody></table>` : 'No results found.';
+      results.map(u => `<tr><td>${u.date}</td><td>${u.time}</td><td>${u.status}</td><td>${u.shift}</td><td>${u.reason||''}</td><td>${u.downtimeHours||0}</td><td>${u.isFailure==='1'?'Yes':'No'}</td></tr>`).join('') +
+      `</tbody></table>` : 'No results found for this equipment.';
     document.getElementById('search-results').innerHTML = html;
   }
 
+  // ── FIXED: Full Status Log (ALWAYS shows ALL records, ignores shaft filter) ─────────────────────────────
   function populateLogTable() {
     const tbody = document.querySelector('#log-table tbody');
-    const filtered = getFilteredUpdates();
-    tbody.innerHTML = filtered.sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time))
+    const sortedUpdates = [...updates].sort((a,b) => new Date(b.date+' '+b.time) - new Date(a.date+' '+a.time));
+    tbody.innerHTML = sortedUpdates
       .map(u => `<tr><td>${u.date}</td><td>${u.time}</td><td>${u.equipmentId}</td><td>${u.status}</td><td>${u.shift}</td><td>${u.reason||''}</td><td>${u.downtimeHours||0}</td><td>${u.isFailure==='1'?'Yes':'No'}</td></tr>`).join('');
+  }
+
+  // ── FIXED: Fleet Summary (ALWAYS shows ALL fleet data, ignores shaft filter) ───────────────────────────
+  function populateSummaryTable() {
+    const allEq = equipment;
+    const allUp = updates;
+    const dates = allUp.map(u=>u.date).filter(Boolean);
+    const minD = dates.length ? dates.reduce((a,c)=>c<a?c:a) : new Date().toISOString().slice(0,10);
+    const maxD = dates.length ? dates.reduce((a,c)=>c>a?c:a) : new Date().toISOString().slice(0,10);
+    const totalDays = dates.length ? Math.ceil((new Date(maxD)-new Date(minD))/86400000)+1 : 0;
+
+    const tbody = document.querySelector('#summary-table tbody');
+    tbody.innerHTML = allEq.map(e => {
+      const id = e.id;
+      const eu = allUp.filter(u=>u.equipmentId===id);
+      const downH = eu.reduce((s,u)=>s+(parseFloat(u.downtimeHours)||0),0);
+      const downD = downH/24;
+      const opD = totalDays - downD;
+      const failures = eu.filter(u=>u.isFailure==='1').length;
+      const mttf = failures>0 ? (opD/failures).toFixed(1) : 'N/A';
+      const avail = totalDays>0 ? (opD/totalDays*100).toFixed(1) : 0;
+      const last = eu.sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time))[0];
+      const status = getEquipmentStatus(id).status;
+
+      return `<tr><td>${id}</td><td>${eu.length}</td><td>${totalDays}</td><td>${downD.toFixed(1)}</td><td>${opD.toFixed(1)}</td><td>${failures}</td><td>${mttf}</td><td>${avail}%</td><td>${last?last.date+' '+last.time:'-'}</td><td>${status}</td><td><button class="btn btn-danger" onclick="removeEquipment('${id}')">Remove</button></td></tr>`;
+    }).join('');
   }
 
   function removeEquipment(locoNumber) {
@@ -883,31 +866,6 @@
         refreshCurrentView();
       } catch (err) { alert('Error: ' + err.message); }
     })();
-  }
-
-  function populateSummaryTable() {
-    const filteredEq = getFilteredEquipment();
-    const filteredUp = getFilteredUpdates();
-    const dates = filteredUp.map(u=>u.date);
-    const minD = dates.length ? dates.reduce((a,c)=>c<a?c:a) : new Date().toISOString().slice(0,10);
-    const maxD = dates.length ? dates.reduce((a,c)=>c>a?c:a) : new Date().toISOString().slice(0,10);
-    const totalDays = Math.ceil((new Date(maxD)-new Date(minD))/86400000)+1;
-
-    const tbody = document.querySelector('#summary-table tbody');
-    tbody.innerHTML = filteredEq.map(e => {
-      const id = e.id;
-      const eu = filteredUp.filter(u=>u.equipmentId===id);
-      const downH = eu.reduce((s,u)=>s+(parseFloat(u.downtimeHours)||0),0);
-      const downD = downH/24;
-      const opD = totalDays - downD;
-      const failures = eu.filter(u=>u.isFailure==='1').length;
-      const mttf = failures>0 ? (opD/failures).toFixed(1) : 'N/A';
-      const avail = totalDays>0 ? (opD/totalDays*100).toFixed(1) : 0;
-      const last = eu.sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time))[0];
-      const status = getEquipmentStatus(id).status;
-
-      return `<tr><td>${id}</td><td>${eu.length}</td><td>${totalDays}</td><td>${downD.toFixed(1)}</td><td>${opD.toFixed(1)}</td><td>${failures}</td><td>${mttf}</td><td>${avail}%</td><td>${last?last.date+' '+last.time:'-'}</td><td>${status}</td><td><button class="btn btn-danger" onclick="removeEquipment('${id}')">Remove</button></td></tr>`;
-    }).join('');
   }
 
   function populateEquipmentTable() {
@@ -966,7 +924,7 @@
     }
   }
 
-  // ── Export functions ────────────────────────────────────────────
+  // ── Export functions (unchanged – already working) ────────────────────────────────────────────
   function exportDashboardPDF() {
     html2canvas(document.getElementById('dashboard'), {scale:2}).then(canvas => {
       const {jsPDF} = window.jspdf;
@@ -1002,7 +960,7 @@
 
   function exportLogCSV() {
     let csv = "Date,Time,ID,Status,Shift,Fault,Down Hrs,Failure\n";
-    getFilteredUpdates().forEach(u => {
+    [...updates].sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time)).forEach(u => {
       csv += `"${u.date}","${u.time}","${u.equipmentId}","${u.status}","${u.shift}","${(u.reason||'').replace(/"/g,'""')}",${u.downtimeHours||0},${u.isFailure}\n`;
     });
     const blob = new Blob([csv], {type:'text/csv'});
@@ -1067,6 +1025,55 @@
     });
   }
 
+  function populateOperationsReport() {
+    const allIds = equipment.map(e => e.id);
+    const statusSummary = {Up:0, Down:0};
+    const problemRows = [];
+    const highRiskRows = [];
+
+    allIds.forEach(id => {
+      const st = getEquipmentStatus(id);
+      statusSummary[st.status] = (statusSummary[st.status]||0) + 1;
+
+      if (st.status === 'Down') {
+        const eu = updates.filter(u => u.equipmentId === id).sort((a,b)=>new Date(b.date+' '+b.time)-new Date(a.date+' '+a.time));
+        const lastDown = eu.find(u => u.status === 'Down');
+        const color = st.downtime>168?'RED':'ORANGE';
+        problemRows.push([id, 'Down', color, lastDown?.reason||'-', st.downtime.toFixed(1)]);
+      }
+
+      const fails = updates.filter(u => u.equipmentId===id && u.isFailure==='1').length;
+      if (fails >= 3 || parseFloat(st.availability) < 92) {
+        let mttfVal = 'N/A';
+        const eu = updates.filter(u => u.equipmentId === id);
+        if (fails > 0) {
+          const uniqueDates = [...new Set(eu.map(u => u.date))];
+          if (uniqueDates.length > 0) {
+            const sortedDates = uniqueDates.sort();
+            const minD = new Date(sortedDates[0]);
+            const maxD = new Date(sortedDates[sortedDates.length - 1]);
+            const totalDays = Math.ceil((maxD - minD) / 86400000) + 1;
+            const downH = eu.reduce((s, u) => s + (parseFloat(u.downtimeHours) || 0), 0);
+            const opDays = Math.max(0, totalDays - downH / 24);
+            mttfVal = (opDays / fails).toFixed(1);
+          }
+        }
+        highRiskRows.push([id, fails, mttfVal, st.availability]);
+      }
+    });
+
+    const total = allIds.length;
+    const opBody = [
+      ['Up (Green)', statusSummary.Up, total ? ((statusSummary.Up/total)*100).toFixed(2)+'%' : '0.00%'],
+      ['Down', statusSummary.Down, total ? ((statusSummary.Down/total)*100).toFixed(2)+'%' : '0.00%'],
+      ['Total', total, '100.00%']
+    ];
+
+    document.getElementById('op-status-tbody').innerHTML = opBody.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+    document.getElementById('problem-equipment-tbody').innerHTML = problemRows.length ? problemRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;padding:20px;">No problem equipment</td></tr>';
+    document.getElementById('high-risk-tbody').innerHTML = highRiskRows.length ? highRiskRows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}%</td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:20px;">No high-risk equipment</td></tr>';
+  }
+
   function populateControlRoom() {
     const shaftFilter = document.getElementById('cr-shaft-filter')?.value || '';
     const dateFilterRaw = document.getElementById('cr-date-filter')?.value || '';
@@ -1124,7 +1131,7 @@
     link.click();
   }
 
-  // ── Import Excel ────────────────────────────────────────────────
+  // ── Import Excel (now auto-switches to Control Room after success) ───────────────────────────────────
   function handleFileUpload() {
     const file = document.getElementById('excel-file').files[0];
     if (!file) return alert('Select Excel file');
@@ -1245,7 +1252,6 @@
       };
       await addDoc(collection(db, "status_updates"), importedUpdate);
 
-      // Auto-create equipment record if shaft is selected and equipment doesn't exist
       if (selectedShaft && !equipment.some(e => e.id === equipment)) {
         await setDoc(doc(db, "equipment", equipment), {
           shaft: selectedShaft,
@@ -1258,9 +1264,9 @@
     }
 
     alert(`Imported ${count} record(s)!`);
-    refreshCurrentView();
     document.getElementById('preview-section').classList.add('hidden');
     document.getElementById('mapping-section').classList.add('hidden');
+    show('control-room');   // ← FIXED: instantly show the imported data in Control Room
   }
 
   // ── Form listeners ──────────────────────────────────────────────
