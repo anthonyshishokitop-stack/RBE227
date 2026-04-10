@@ -1,5 +1,4 @@
 // ====================== FIREBASE + SEARCH HISTORY ======================
-
 const firebaseConfig = {
     apiKey: "AIzaSyCnDsQVhQxk9Q7axCPcMSpHDcqOonBbNMc",
     authDomain: "rbe-equipment.firebaseapp.com",
@@ -66,3 +65,43 @@ window.clearSearchHistory = async () => {
 };
 
 // ====================== END FIREBASE SETUP ======================
+
+
+// ====================== DISPLAY SEARCH HISTORY (Step 5) ======================
+function updateHistoryUI(history) {
+  // CHANGE THIS ID to match your actual history container
+  // Common possibilities: 'history-list', 'search-history', 'history', 'job-history', 'past-searches'
+  const container = document.getElementById('history-list');   
+
+  if (!container) {
+    console.warn("❌ History container not found. Please check the ID in updateHistoryUI()");
+    return;
+  }
+
+  container.innerHTML = '';   // Clear old items
+
+  if (history.length === 0) {
+    container.innerHTML = `<li class="text-muted">No searches yet</li>`;
+    return;
+  }
+
+  history.forEach(item => {
+    const li = document.createElement('li');
+    li.className = "list-group-item d-flex justify-content-between align-items-center";
+    li.innerHTML = `
+      <div>
+        <strong>Job Order: ${item.jobOrder}</strong><br>
+        <small class="text-muted">${item.pdfName || ''}</small>
+      </div>
+      <small class="text-muted">${item.timestamp.toLocaleString()}</small>
+    `;
+    container.appendChild(li);
+  });
+}
+
+// ====================== START LIVE HISTORY (Step 4) ======================
+// This runs automatically when the page loads
+window.addEventListener('load', () => {
+  console.log('%c📡 Starting live search history...', 'color:#3b82f6');
+  startLiveSearchHistory(updateHistoryUI);
+});
