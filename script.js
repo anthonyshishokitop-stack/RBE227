@@ -1,4 +1,4 @@
-// ====================== FIREBASE + SEARCH HISTORY ======================
+// ====================== FIREBASE SETUP ======================
 const firebaseConfig = {
     apiKey: "AIzaSyCnDsQVhQxk9Q7axCPcMSpHDcqOonBbNMc",
     authDomain: "rbe-equipment.firebaseapp.com",
@@ -15,10 +15,9 @@ const db = firebase.firestore();
 
 console.log('%c✅ Firebase initialized successfully', 'color:#16a34a; font-weight:bold');
 
-// Collection name
 const HISTORY_COLLECTION = 'searchHistory';
 
-// 1. Add a new search to history
+// Save a new search to Firebase
 async function addToSearchHistory(jobOrderNumber, pdfName = '') {
   if (!jobOrderNumber) return;
   try {
@@ -28,16 +27,16 @@ async function addToSearchHistory(jobOrderNumber, pdfName = '') {
       timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       searchedAt: new Date().toISOString()
     });
-    console.log(`✅ Saved search: ${jobOrderNumber}`);
+    console.log(`✅ Saved to history: ${jobOrderNumber}`);
   } catch (e) {
-    console.error("❌ Error saving search:", e);
+    console.error("❌ Error saving to history:", e);
   }
 }
 
-// 2. Real-time listener for history (call once on page load)
+// Real-time listener
 let historyUnsubscribe = null;
 
-function startLiveSearchHistory(displayCallback) {
+function startLiveSearchHistory() {
   if (historyUnsubscribe) historyUnsubscribe();
 
   historyUnsubscribe = db.collection(HISTORY_COLLECTION)
@@ -53,33 +52,24 @@ function startLiveSearchHistory(displayCallback) {
           timestamp: data.timestamp ? data.timestamp.toDate() : new Date(data.searchedAt)
         });
       });
-      displayCallback(history);
-    }, error => console.error("History listener error:", error));
+      updateHistoryUI(history);
+    }, error => {
+      console.error("History listener error:", error);
+    });
 }
 
-// 3. Optional: Clear entire history (for testing)
-window.clearSearchHistory = async () => {
-  const snapshot = await db.collection(HISTORY_COLLECTION).get();
-  snapshot.docs.forEach(doc => doc.ref.delete());
-  console.log("🗑️ All search history cleared");
-};
-
-// ====================== END FIREBASE SETUP ======================
-
-
-// ====================== DISPLAY SEARCH HISTORY ======================
+// Display history in the list
 function updateHistoryUI(history) {
   const container = document.getElementById('history-list');
-
   if (!container) {
-    console.error("❌ History list container not found!");
+    console.error("❌ #history-list not found");
     return;
   }
 
   container.innerHTML = '';
 
   if (history.length === 0) {
-    container.innerHTML = `<li class="list-group-item text-muted">No searches yet. Try searching a Job Order.</li>`;
+    container.innerHTML = `<li class="list-group-item text-muted">No searches yet. Perform a search above.</li>`;
     return;
   }
 
@@ -89,7 +79,7 @@ function updateHistoryUI(history) {
     li.innerHTML = `
       <div>
         <strong>Job Order: ${item.jobOrder}</strong><br>
-        <small class="text-muted">${item.pdfName || 'Equipment Search'}</small>
+        <small class="text-muted">${item.pdfName || ''}</small>
       </div>
       <small class="text-muted">${item.timestamp.toLocaleString()}</small>
     `;
@@ -97,9 +87,40 @@ function updateHistoryUI(history) {
   });
 }
 
-// ====================== START LIVE HISTORY (Step 4) ======================
-// This runs automatically when the page loads
-window.addEventListener('load', () => {
+// ====================== CONNECT SEARCH BUTTON ======================
+document.addEventListener('DOMContentLoaded', function() {
+  const searchForm = document.getElementById('search-form');
+  
+  if (searchForm) {
+    searchForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      // Get value from Equipment ID or Job Order select
+      let jobOrderNumber = document.getElementById('s-loco').value.trim();
+      if (!jobOrderNumber) {
+        jobOrderNumber = document.getElementById('job-loco').value;
+      }
+
+      if (jobOrderNumber) {
+        await addToSearchHistory(jobOrderNumber);   // ← Save to Firebase
+        console.log(`🔍 Searched: ${jobOrderNumber}`);
+        // You can add your existing search logic here later
+      } else {
+        alert("Please enter Equipment ID or select Job Order Equipment");
+      }
+    });
+  }
+
+  // Start listening to Firebase history
   console.log('%c📡 Starting live search history...', 'color:#3b82f6');
-  startLiveSearchHistory(updateHistoryUI);
+  startLiveSearchHistory();
 });
+
+// Optional: Clear history button (type in console: clearSearchHistory())
+window.clearSearchHistory = async () => {
+  if (confirm("Clear all search history?")) {
+    const snapshot = await db.collection(HISTORY_COLLECTION).get();
+    snapshot.docs.forEach(doc => doc.ref.delete());
+    console.log("🗑️ History cleared");
+  }
+};
