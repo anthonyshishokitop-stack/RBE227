@@ -67,21 +67,19 @@ window.clearSearchHistory = async () => {
 // ====================== END FIREBASE SETUP ======================
 
 
-// ====================== DISPLAY SEARCH HISTORY (Step 5) ======================
+// ====================== DISPLAY SEARCH HISTORY ======================
 function updateHistoryUI(history) {
-  // CHANGE THIS ID to match your actual history container
-  // Common possibilities: 'history-list', 'search-history', 'history', 'job-history', 'past-searches'
-  const container = document.getElementById('history-list');   
+  const container = document.getElementById('history-list');
 
   if (!container) {
-    console.warn("❌ History container not found. Please check the ID in updateHistoryUI()");
+    console.error("❌ History list container not found!");
     return;
   }
 
-  container.innerHTML = '';   // Clear old items
+  container.innerHTML = '';
 
   if (history.length === 0) {
-    container.innerHTML = `<li class="text-muted">No searches yet</li>`;
+    container.innerHTML = `<li class="list-group-item text-muted">No searches yet. Try searching a Job Order.</li>`;
     return;
   }
 
@@ -91,7 +89,7 @@ function updateHistoryUI(history) {
     li.innerHTML = `
       <div>
         <strong>Job Order: ${item.jobOrder}</strong><br>
-        <small class="text-muted">${item.pdfName || ''}</small>
+        <small class="text-muted">${item.pdfName || 'Equipment Search'}</small>
       </div>
       <small class="text-muted">${item.timestamp.toLocaleString()}</small>
     `;
