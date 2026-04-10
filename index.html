@@ -306,23 +306,35 @@
         </section>
 
         <!-- SEARCH -->
-        <section id="search-status" class="hidden">
-          <div class="header-bar"><h1>Search History</h1></div>
-          <form id="search-form" style="max-width:800px;margin:0 auto;">
-            <div class="form-group"><label>Equipment ID</label><input id="s-loco" list="loco-list"></div>
-            <div class="form-group"><label>Date (optional)</label><input id="s-date" type="date"></div>
-            <div class="form-group"><label>Job Order Equipment</label><select id="job-loco"><option value="">Select Equipment</option></select></div>
-            <div style="margin:1rem 0;display:flex;align-items:center;gap:8px;">
-              <input type="checkbox" id="show-all-history">
-              <label for="show-all-history" style="margin:0;font-weight:600;">Show Full History</label>
-            </div>
-            <div style="display:flex;gap:12px;flex-wrap:wrap;">
-              <button type="submit" class="btn btn-primary">Search</button>
-              <button type="button" class="btn btn-info" onclick="generateJobPDF()"><i class="fas fa-file-pdf"></i> Job Order PDF</button>
-            </div>
-          </form>
-          <div id="search-results" style="margin-top:2rem;"></div>
-        </section>
+<section id="search-status" class="">
+  <div class="header-bar"><h1>Search History</h1></div>
+  
+  <form id="search-form" style="max-width:800px;margin:0 auto;">
+    <div class="form-group"><label>Equipment ID</label><input id="s-loco" list="loco-list"></div>
+    <div class="form-group"><label>Date (optional)</label><input id="s-date" type="date"></div>
+    <div class="form-group"><label>Job Order Equipment</label><select id="job-loco"><option value="">Select Equipment</option><option value="100">100</option><option value="111">111</option><option value="120">120</option><option value="126">126</option><option value="19960">19960</option><option value="2000">2000</option><option value="2026">2026</option><option value="217">217</option></select></div>
+    
+    <div style="margin:1rem 0;display:flex;align-items:center;gap:8px;">
+      <input type="checkbox" id="show-all-history">
+      <label for="show-all-history" style="margin:0;font-weight:600;">Show Full History</label>
+    </div>
+    
+    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+      <button type="submit" class="btn btn-primary">Search</button>
+      <button type="button" class="btn btn-info" onclick="generateJobPDF()"><i class="fas fa-file-pdf"></i> Job Order PDF</button>
+    </div>
+  </form>
+
+  <!-- 🔥 NEW: This is the container for Search History list -->
+  <div id="history-container" style="margin-top: 2.5rem;">
+    <h5 style="margin-bottom: 10px; color: #555;">Recent Searches</h5>
+    <ul id="history-list" class="list-group">
+      <!-- History items will appear here automatically -->
+    </ul>
+  </div>
+
+  <div id="search-results" style="margin-top:2rem;">No results found.</div>
+</section>
 
         <!-- FULL LOG -->
         <section id="status-log" class="hidden">
