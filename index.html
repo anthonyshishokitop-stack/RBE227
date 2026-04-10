@@ -624,10 +624,13 @@
   document.getElementById('logout-btn').onclick = () => signOut(auth);
 
   onAuthStateChanged(auth, user => {
-    if (user) {
-      authSection.classList.add('hidden');
-      appDiv.classList.remove('hidden');
-      startRealtimeListeners();
+if (user) {
+  authSection.classList.add('hidden');
+  appDiv.classList.remove('hidden');
+  startRealtimeListeners();
+  startSearchHistoryListener();   // ← ADD THIS LINE
+
+      
     } else {
       authSection.classList.remove('hidden');
       appDiv.classList.add('hidden');
@@ -1333,6 +1336,78 @@
     document.getElementById('mapping-section').classList.add('hidden');
   }
 
+
+// ====================== SEARCH HISTORY (Recent Searches) ======================
+
+// 1. Save every search to Firebase
+async function addToSearchHistory(jobOrderNumber, pdfName = '') {
+  if (!jobOrderNumber) return;
+  try {
+    await addDoc(collection(db, "searchHistory"), {
+      jobOrder: jobOrderNumber.toString().trim(),
+      pdfName: pdfName || `Job Order ${jobOrderNumber}`,
+      timestamp: serverTimestamp(),
+      searchedAt: new Date().toISOString()
+    });
+    console.log(`✅ Saved search: ${jobOrderNumber}`);
+  } catch (e) {
+    console.error("❌ Error saving search:", e);
+  }
+}
+
+// 2. Real-time listener for Recent Searches
+let historyUnsubscribe = null;
+
+function startSearchHistoryListener() {
+  if (historyUnsubscribe) historyUnsubscribe();
+
+  historyUnsubscribe = onSnapshot(
+    query(collection(db, "searchHistory"), orderBy("timestamp", "desc"), limit(30)),
+    (snapshot) => {
+      const history = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        history.push({
+          id: doc.id,
+          ...data,
+          timestamp: data.timestamp ? data.timestamp.toDate() : new Date(data.searchedAt)
+        });
+      });
+      updateHistoryUI(history);
+    },
+    (error) => console.error("History listener error:", error)
+  );
+}
+
+// 3. Display function
+function updateHistoryUI(history) {
+  const container = document.getElementById('history-list');
+  if (!container) return;
+
+  container.innerHTML = '';
+
+  if (history.length === 0) {
+    container.innerHTML = `<li class="list-group-item text-muted">No searches yet. Try searching above.</li>`;
+    return;
+  }
+
+  history.forEach(item => {
+    const li = document.createElement('li');
+    li.className = "list-group-item d-flex justify-content-between align-items-center";
+    li.innerHTML = `
+      <div>
+        <strong>Job Order: ${item.jobOrder}</strong><br>
+        <small class="text-muted">${item.pdfName || ''}</small>
+      </div>
+      <small class="text-muted">${item.timestamp.toLocaleString()}</small>
+    `;
+    container.appendChild(li);
+  });
+}
+
+// ====================== END SEARCH HISTORY ======================
+  
+
   // ── Form listeners ──────────────────────────────────────────────
   document.getElementById('add-eq-form').addEventListener('submit', async e => {
     e.preventDefault();
@@ -1420,14 +1495,26 @@
     }
   });
 
-  document.getElementById('search-form').addEventListener('submit', e => {
-    e.preventDefault();
-    searchStatus(
-      document.getElementById('s-loco').value,
-      document.getElementById('s-date').value,
-      document.getElementById('show-all-history').checked
-    );
-  });
+document.getElementById('search-form').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  // Get the value the user searched for
+  let jobOrderNumber = document.getElementById('s-loco').value.trim();
+  if (!jobOrderNumber) {
+    jobOrderNumber = document.getElementById('job-loco').value;
+  }
+
+  if (jobOrderNumber) {
+    await addToSearchHistory(jobOrderNumber);   // ← SAVE TO FIREBASE
+  }
+
+  // Keep your existing searchStatus function
+  searchStatus(
+    document.getElementById('s-loco').value,
+    document.getElementById('s-date').value,
+    document.getElementById('show-all-history').checked
+  );
+});
 
   // ── Theme toggle ────────────────────────────────────────────────
   function toggleTheme() {
